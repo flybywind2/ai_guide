@@ -1,0 +1,24 @@
+import { create } from 'zustand';
+
+interface UIState {
+  leftSidebarCollapsed: boolean;
+  rightSidebarCollapsed: boolean;
+  showContinueModal: boolean;
+  toggleLeftSidebar: () => void;
+  toggleRightSidebar: () => void;
+  setShowContinueModal: (show: boolean) => void;
+}
+
+export const useUIStore = create<UIState>((set) => ({
+  leftSidebarCollapsed: false,
+  rightSidebarCollapsed: false,
+  showContinueModal: false,
+
+  toggleLeftSidebar: () =>
+    set((state) => ({ leftSidebarCollapsed: !state.leftSidebarCollapsed })),
+
+  toggleRightSidebar: () =>
+    set((state) => ({ rightSidebarCollapsed: !state.rightSidebarCollapsed })),
+
+  setShowContinueModal: (show: boolean) => set({ showContinueModal: show }),
+}));
