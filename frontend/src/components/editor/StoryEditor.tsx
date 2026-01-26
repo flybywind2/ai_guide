@@ -17,7 +17,7 @@ import '@xyflow/react/dist/style.css';
 import api from '../../services/api';
 import type { StoryWithPassages, Passage } from '../../types';
 import { Button } from '../common';
-import { Plus, Save, X, Code, FileText, Play, Trash2 } from 'lucide-react';
+import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2 } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { PassageCodeEditor } from './PassageCodeEditor';
 import { extractPassageLinks, extractVariables } from './twine-syntax';
@@ -36,10 +36,22 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [allPassages, setAllPassages] = useState<Passage[]>([]);
   const [storyVariables, setStoryVariables] = useState<string[]>([]);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
     fetchStory();
   }, [storyId]);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMaximized) {
+        setIsMaximized(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMaximized]);
 
   const fetchStory = async () => {
     try {
@@ -235,7 +247,13 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
+    <div
+      className={`flex ${
+        isMaximized
+          ? 'fixed inset-0 z-50 bg-white'
+          : 'h-[calc(100vh-64px)]'
+      }`}
+    >
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex gap-2">
           <Button onClick={addPassage}>
@@ -249,6 +267,17 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
           <Button variant="secondary" onClick={testStory}>
             <Play className="w-4 h-4 mr-2" />
             Test Story
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setIsMaximized(!isMaximized)}
+            title={isMaximized ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isMaximized ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
           </Button>
         </div>
 
@@ -321,6 +350,18 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('code');
   const [linkedPassages, setLinkedPassages] = useState<string[]>([]);
+  const [isContentMaximized, setIsContentMaximized] = useState(false);
+
+  // Handle ESC key to exit content maximize mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isContentMaximized) {
+        setIsContentMaximized(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isContentMaximized]);
 
   // Update linked passages when content changes
   useEffect(() => {
@@ -404,30 +445,40 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium">Content</label>
-          <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <div className="flex items-center gap-2">
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setEditorMode('code')}
+                className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
+                  editorMode === 'code'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Code className="w-3 h-3" />
+                Code
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorMode('wysiwyg')}
+                className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
+                  editorMode === 'wysiwyg'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <FileText className="w-3 h-3" />
+                Visual
+              </button>
+            </div>
             <button
               type="button"
-              onClick={() => setEditorMode('code')}
-              className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
-                editorMode === 'code'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              onClick={() => setIsContentMaximized(true)}
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+              title="Maximize editor"
             >
-              <Code className="w-3 h-3" />
-              Code
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditorMode('wysiwyg')}
-              className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
-                editorMode === 'wysiwyg'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <FileText className="w-3 h-3" />
-              Visual
+              <Maximize2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -448,6 +499,89 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
           />
         )}
       </div>
+
+      {/* Maximized Content Editor Modal */}
+      {isContentMaximized && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center gap-4">
+              <h3 className="font-semibold text-lg">Edit Content: {name}</h3>
+              <div className="flex bg-gray-200 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('code')}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    editorMode === 'code'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Code className="w-4 h-4" />
+                  Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('wysiwyg')}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    editorMode === 'wysiwyg'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Visual
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Press ESC to exit</span>
+              <button
+                type="button"
+                onClick={() => setIsContentMaximized(false)}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Exit maximize"
+              >
+                <Minimize2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Editor */}
+          <div className="flex-1 overflow-auto p-4">
+            {editorMode === 'code' ? (
+              <div className="h-full [&_.passage-code-editor]:h-full [&_.passage-code-editor>div:last-of-type]:h-[calc(100%-theme(spacing.14))] [&_.cm-editor]:h-full [&_.cm-scroller]:h-full">
+                <PassageCodeEditor
+                  content={content}
+                  onChange={setContent}
+                  passages={otherPassages}
+                  variables={storyVariables}
+                  placeholder="Enter passage content with Twine-style macros..."
+                />
+              </div>
+            ) : (
+              <div className="h-full [&>div]:h-full [&_.ProseMirror]:min-h-[calc(100vh-200px)]">
+                <TipTapEditor
+                  content={content}
+                  onChange={setContent}
+                  onImageUpload={handleImageUpload}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setIsContentMaximized(false)}>
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Linked passages preview */}
       {linkedPassages.length > 0 && (

@@ -81,6 +81,7 @@ class StoryBase(BaseModel):
     zoom: float = 1.0
     tags: List[str] = []
     sort_order: int = 0
+    icon: str = "book-open"
 
 class StoryCreate(StoryBase):
     pass
@@ -93,6 +94,7 @@ class StoryUpdate(BaseModel):
     zoom: Optional[float] = None
     tags: Optional[List[str]] = None
     sort_order: Optional[int] = None
+    icon: Optional[str] = None
 
 class StoryResponse(BaseModel):
     id: str
@@ -103,6 +105,7 @@ class StoryResponse(BaseModel):
     zoom: float
     tags: List[str]
     sort_order: int
+    icon: str
     created_by: Optional[str]
     created_at: str
     updated_at: str

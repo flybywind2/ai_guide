@@ -21,6 +21,7 @@ class Story(Base):
     zoom = Column(Float, default=1.0)
     tags = Column(Text, default="[]")
     sort_order = Column(Integer, default=0)
+    icon = Column(String(50), default="book-open")
     created_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"))
     created_at = Column(String(26), default=now_iso)
     updated_at = Column(String(26), default=now_iso, onupdate=now_iso)

@@ -1,10 +1,48 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Code } from 'lucide-react';
+import {
+  BookOpen,
+  Lightbulb,
+  Target,
+  Rocket,
+  Brain,
+  Code,
+  Gamepad2,
+  Map,
+  Compass,
+  Star,
+  Heart,
+  Zap,
+  Award,
+  Sparkles,
+  Image,
+} from 'lucide-react';
 import { useStoryStore } from '../../stores/storyStore';
 import { useUIStore } from '../../stores/uiStore';
 import { Layout } from '../../components/layout';
 import { Card, Button, Modal } from '../../components/common';
+
+const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
+  'book-open': BookOpen,
+  lightbulb: Lightbulb,
+  target: Target,
+  rocket: Rocket,
+  brain: Brain,
+  code: Code,
+  gamepad2: Gamepad2,
+  map: Map,
+  compass: Compass,
+  star: Star,
+  heart: Heart,
+  zap: Zap,
+  award: Award,
+  sparkles: Sparkles,
+  image: Image,
+};
+
+const getIcon = (iconName?: string) => {
+  return ICON_MAP[iconName || 'book-open'] || BookOpen;
+};
 
 export const StorySelectPage: React.FC = () => {
   const navigate = useNavigate();
@@ -59,29 +97,28 @@ export const StorySelectPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {stories.map((story) => (
-                <Card
-                  key={story.id}
-                  hover
-                  onClick={() => handleStartStory(story.id)}
-                  className="text-center py-8"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
-                    {story.name.includes('활용') || story.name.includes('Usage') ? (
-                      <Sparkles className="w-8 h-8 text-primary-600" />
-                    ) : (
-                      <Code className="w-8 h-8 text-primary-600" />
-                    )}
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    {story.name}
-                  </h2>
-                  <p className="text-gray-600 mb-4">
-                    {story.description || 'Start your learning journey'}
-                  </p>
-                  <Button>Start</Button>
-                </Card>
-              ))}
+              {stories.map((story) => {
+                const IconComponent = getIcon(story.icon);
+                return (
+                  <Card
+                    key={story.id}
+                    hover
+                    onClick={() => handleStartStory(story.id)}
+                    className="text-center py-8"
+                  >
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
+                      <IconComponent className="w-8 h-8 text-primary-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      {story.name}
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                      {story.description || 'Start your learning journey'}
+                    </p>
+                    <Button>Start</Button>
+                  </Card>
+                );
+              })}
 
               {stories.length === 0 && (
                 <div className="col-span-2 text-center py-12 text-gray-500">

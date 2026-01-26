@@ -44,6 +44,7 @@ async def get_all_stories(
             zoom=s.zoom,
             tags=json.loads(s.tags) if s.tags else [],
             sort_order=s.sort_order,
+            icon=s.icon or "book-open",
             created_by=s.created_by,
             created_at=s.created_at,
             updated_at=s.updated_at
@@ -83,6 +84,7 @@ async def create_story(
         zoom=story.zoom,
         tags=json.loads(story.tags) if story.tags else [],
         sort_order=story.sort_order,
+        icon=story.icon or "book-open",
         created_by=story.created_by,
         created_at=story.created_at,
         updated_at=story.updated_at
@@ -119,6 +121,7 @@ async def reorder_stories(
             zoom=s.zoom,
             tags=json.loads(s.tags) if s.tags else [],
             sort_order=s.sort_order,
+            icon=s.icon or "book-open",
             created_by=s.created_by,
             created_at=s.created_at,
             updated_at=s.updated_at
@@ -154,6 +157,7 @@ async def get_story_full(
         zoom=story.zoom,
         tags=json.loads(story.tags) if story.tags else [],
         sort_order=story.sort_order,
+        icon=story.icon or "book-open",
         created_by=story.created_by,
         created_at=story.created_at,
         updated_at=story.updated_at,
@@ -215,6 +219,8 @@ async def update_story(
         story.tags = json.dumps(story_data.tags)
     if story_data.sort_order is not None:
         story.sort_order = story_data.sort_order
+    if story_data.icon is not None:
+        story.icon = story_data.icon
 
     story.updated_at = datetime.utcnow().isoformat()
     await db.commit()
@@ -229,6 +235,7 @@ async def update_story(
         zoom=story.zoom,
         tags=json.loads(story.tags) if story.tags else [],
         sort_order=story.sort_order,
+        icon=story.icon or "book-open",
         created_by=story.created_by,
         created_at=story.created_at,
         updated_at=story.updated_at

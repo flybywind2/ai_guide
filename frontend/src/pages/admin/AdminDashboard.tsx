@@ -1,10 +1,58 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BookOpen, FileText, Eye, Plus, GripVertical } from 'lucide-react';
+import {
+  Users,
+  BookOpen,
+  FileText,
+  Eye,
+  Plus,
+  GripVertical,
+  Trash2,
+  Image,
+  Settings,
+  Sparkles,
+  Lightbulb,
+  Target,
+  Rocket,
+  Brain,
+  Code,
+  Gamepad2,
+  Map,
+  Compass,
+  Star,
+  Heart,
+  Zap,
+  Award,
+  X,
+} from 'lucide-react';
 import api from '../../services/api';
 import { Layout } from '../../components/layout';
 import { Card, Button } from '../../components/common';
 import type { Story } from '../../types';
+
+// Available icons for stories
+const STORY_ICONS = [
+  { name: 'book-open', icon: BookOpen },
+  { name: 'lightbulb', icon: Lightbulb },
+  { name: 'target', icon: Target },
+  { name: 'rocket', icon: Rocket },
+  { name: 'brain', icon: Brain },
+  { name: 'code', icon: Code },
+  { name: 'gamepad2', icon: Gamepad2 },
+  { name: 'map', icon: Map },
+  { name: 'compass', icon: Compass },
+  { name: 'star', icon: Star },
+  { name: 'heart', icon: Heart },
+  { name: 'zap', icon: Zap },
+  { name: 'award', icon: Award },
+  { name: 'sparkles', icon: Sparkles },
+  { name: 'image', icon: Image },
+];
+
+const getIconComponent = (iconName: string) => {
+  const iconData = STORY_ICONS.find((i) => i.name === iconName);
+  return iconData?.icon || BookOpen;
+};
 
 interface Stats {
   total_users: number;
@@ -20,6 +68,8 @@ export const AdminDashboard: React.FC = () => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [iconPickerStoryId, setIconPickerStoryId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const dragNodeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -50,6 +100,28 @@ export const AdminDashboard: React.FC = () => {
       fetchData();
     } catch (error) {
       console.error('Failed to create story:', error);
+    }
+  };
+
+  const deleteStory = async (storyId: string) => {
+    try {
+      await api.delete(`/admin/stories/${storyId}`);
+      setDeleteConfirmId(null);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to delete story:', error);
+    }
+  };
+
+  const updateStoryIcon = async (storyId: string, icon: string) => {
+    try {
+      await api.put(`/admin/stories/${storyId}`, { icon });
+      setStories((prev) =>
+        prev.map((s) => (s.id === storyId ? { ...s, icon } : s))
+      );
+      setIconPickerStoryId(null);
+    } catch (error) {
+      console.error('Failed to update story icon:', error);
     }
   };
 
@@ -208,49 +280,126 @@ export const AdminDashboard: React.FC = () => {
             Drag and drop to reorder stories. The order will be reflected on the public story selection page.
           </p>
           <div className="space-y-3">
-            {stories.map((story, index) => (
-              <div
-                key={story.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-move transition-all ${
-                  dragOverIndex === index && draggedIndex !== index
-                    ? 'border-2 border-primary-500 border-dashed bg-primary-50'
-                    : 'border-2 border-transparent'
-                } ${
-                  draggedIndex === index ? 'opacity-50' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <GripVertical className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">{story.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {story.description || 'No description'}
-                    </p>
+            {stories.map((story, index) => {
+              const IconComponent = getIconComponent(story.icon || 'book-open');
+              return (
+                <div
+                  key={story.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-move transition-all ${
+                    dragOverIndex === index && draggedIndex !== index
+                      ? 'border-2 border-primary-500 border-dashed bg-primary-50'
+                      : 'border-2 border-transparent'
+                  } ${draggedIndex === index ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <GripVertical className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIconPickerStoryId(
+                            iconPickerStoryId === story.id ? null : story.id
+                          );
+                        }}
+                        className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center hover:bg-primary-200 transition-colors"
+                        title="Change icon"
+                      >
+                        <IconComponent className="w-5 h-5 text-primary-600" />
+                      </button>
+                      {iconPickerStoryId === story.id && (
+                        <div className="absolute top-12 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-48">
+                          <div className="flex items-center justify-between mb-2 pb-2 border-b">
+                            <span className="text-xs font-medium text-gray-600">
+                              Select Icon
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIconPickerStoryId(null);
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded"
+                            >
+                              <X className="w-3 h-3 text-gray-500" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-5 gap-1">
+                            {STORY_ICONS.map(({ name, icon: Icon }) => (
+                              <button
+                                key={name}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateStoryIcon(story.id, name);
+                                }}
+                                className={`p-2 rounded hover:bg-gray-100 transition-colors ${
+                                  story.icon === name ? 'bg-primary-100' : ''
+                                }`}
+                                title={name}
+                              >
+                                <Icon className="w-4 h-4 text-gray-600" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{story.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {story.description || 'No description'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${
+                        story.is_active
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {story.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <Link to={`/admin/stories/${story.id}`}>
+                      <Button variant="secondary" size="sm">
+                        Edit
+                      </Button>
+                    </Link>
+                    <div className="relative">
+                      {deleteConfirmId === story.id ? (
+                        <div className="flex items-center gap-1 bg-red-50 rounded-lg px-2 py-1">
+                          <span className="text-xs text-red-700">Delete?</span>
+                          <button
+                            onClick={() => deleteStory(story.id)}
+                            className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirmId(story.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete story"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      story.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {story.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                  <Link to={`/admin/stories/${story.id}`}>
-                    <Button variant="secondary" size="sm">
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {stories.length === 0 && (
               <p className="text-center text-gray-500 py-8">

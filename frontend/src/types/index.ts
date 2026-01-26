@@ -16,6 +16,7 @@ export interface Story {
   zoom: number;
   tags: string[];
   sort_order: number;
+  icon: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
