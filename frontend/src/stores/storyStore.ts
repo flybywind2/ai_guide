@@ -30,6 +30,7 @@ interface StoryState {
   fetchStory: (storyId: string) => Promise<void>;
   fetchStoryStructure: (storyId: string) => Promise<void>;
   startStory: (storyId: string) => Promise<void>;
+  loadPassageById: (passageId: string, updateHistory?: boolean) => Promise<void>;
   navigateToPassage: (passageIdOrName: string, prevPassageId?: string) => Promise<void>;
   navigateViaLink: (linkId: string) => Promise<void>;
   goBack: () => Promise<void>;
@@ -140,6 +141,42 @@ export const useStoryStore = create<StoryState>((set, get) => ({
         navigationHistoryWithNames: [{ id: passage.id, name: passage.name }],
         currentHistoryIndex: 0,
       });
+      get().saveLastVisit();
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loadPassageById: async (passageId: string, updateHistory = true) => {
+    set({ isLoading: true });
+    try {
+      // First get the passage to find its story
+      const response = await api.get(`/passages/${passageId}`);
+      const passage = response.data.passage;
+      const storyId = passage.story_id;
+
+      // Load story if not already loaded or different
+      const currentStory = get().currentStory;
+      if (!currentStory || currentStory.id !== storyId) {
+        await get().fetchStory(storyId);
+        await get().fetchStoryStructure(storyId);
+      }
+
+      if (updateHistory) {
+        set((state) => {
+          return {
+            currentPassage: response.data,
+            previousPassageId: state.currentPassage?.passage.id || null,
+            navigationHistory: [...state.navigationHistory, passage.id],
+            navigationHistoryWithNames: [...state.navigationHistoryWithNames, { id: passage.id, name: passage.name }],
+            currentHistoryIndex: state.navigationHistoryWithNames.length,
+          };
+        });
+      } else {
+        set({
+          currentPassage: response.data,
+        });
+      }
       get().saveLastVisit();
     } finally {
       set({ isLoading: false });

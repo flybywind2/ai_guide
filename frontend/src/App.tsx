@@ -61,6 +61,7 @@ const App: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/passage" element={<PassagePage />} />
+      <Route path="/passage/:passageId" element={<PassagePage />} />
 
       {/* Admin Routes */}
       <Route

@@ -7,11 +7,13 @@ import type { Passage } from '../../types';
 interface BranchNodeData {
   label: string;
   passage: Passage;
+  isCurrentPassage?: boolean;
 }
 
 export const BranchNode: React.FC<NodeProps> = memo(({ data, selected }) => {
   const nodeData = data as unknown as BranchNodeData;
   const passage = nodeData.passage;
+  const isCurrentPassage = nodeData.isCurrentPassage || false;
 
   const { branchData } = parseBranchData(passage.content || '');
   const choices = branchData?.choices || [];
@@ -21,9 +23,11 @@ export const BranchNode: React.FC<NodeProps> = memo(({ data, selected }) => {
       className={`relative min-w-[180px] ${selected ? 'ring-2 ring-primary-500' : ''}`}
       style={{
         backgroundColor: '#FEF3C7',
-        border: '2px solid #F59E0B',
+        border: isCurrentPassage ? '4px solid #7C3AED' : '2px solid #F59E0B',
         borderRadius: '8px',
         padding: '10px',
+        boxShadow: isCurrentPassage ? '0 0 20px rgba(124, 58, 237, 0.5)' : undefined,
+        cursor: 'pointer',
       }}
     >
       <Handle
