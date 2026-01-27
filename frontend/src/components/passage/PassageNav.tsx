@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, RotateCcw, GitFork } from 'lucide-react';
 import { useStoryStore } from '../../stores/storyStore';
 import { Button } from '../common';
+import { parseBranchData } from '../../utils/branch-utils';
 import type { PassageWithContext } from '../../types';
 
 interface PassageNavProps {
@@ -17,6 +18,10 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
   const canGoBack = navigationHistory.length > 1;
   const isBranch = passage.passage_type === 'branch';
 
+  // Check if passage has branch data in content
+  const { branchData } = parseBranchData(passage.content || '');
+  const hasBranchData = branchData && branchData.choices.length > 0;
+
   // Separate user selection links from automatic links
   const userSelectionLinks = available_links.filter(
     (link) => link.condition_type === 'user_selection'
@@ -28,14 +33,43 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
   const sortedAutoLinks = [...autoLinks].sort((a, b) => a.link_order - b.link_order);
   const primaryAutoLink = sortedAutoLinks[0];
 
-  // For branch type, show all links as choices
-  const branchLinks = isBranch ? sortedAutoLinks : [];
+  // For branch type without branch data, show all links as choices in nav bar
+  const branchLinks = (isBranch && !hasBranchData) ? sortedAutoLinks : [];
 
   const handleLinkClick = async (linkId: string) => {
     await navigateViaLink(linkId);
   };
 
-  // Branch type: Show prominent choice UI
+  // Branch type with branch data: Show simplified nav (choices are in main content)
+  if (isBranch && hasBranchData) {
+    return (
+      <div className="bg-gradient-to-t from-amber-50/50 to-white border-t border-amber-200 px-6 py-4 fixed bottom-0 left-0 right-0 z-30">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={goBack}
+            disabled={!canGoBack}
+            className="text-gray-500"
+          >
+            <ChevronLeft className="w-5 h-5 mr-1" />
+            Previous
+          </Button>
+
+          <div className="flex items-center gap-2 text-amber-600">
+            <GitFork className="w-4 h-4" />
+            <span className="text-sm font-medium">Choose above to continue</span>
+          </div>
+
+          <Button variant="ghost" onClick={() => navigate('/')} className="text-gray-500">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Change Path
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Branch type without branch data: Show prominent choice UI in nav bar
   if (isBranch && branchLinks.length > 0) {
     return (
       <div className="bg-gradient-to-t from-amber-50 to-white border-t-2 border-amber-300 px-6 py-6 fixed bottom-0 left-0 right-0 z-30">

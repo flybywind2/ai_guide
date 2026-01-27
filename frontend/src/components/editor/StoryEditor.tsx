@@ -18,10 +18,18 @@ import '@xyflow/react/dist/style.css';
 import api from '../../services/api';
 import type { StoryWithPassages, Passage } from '../../types';
 import { Button } from '../common';
-import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2 } from 'lucide-react';
+import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2, HelpCircle } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { PassageCodeEditor } from './PassageCodeEditor';
+import { MacroGuideModal } from './MacroGuideModal';
+import { BranchNode } from './BranchNode';
 import { extractPassageLinks, extractVariables } from './twine-syntax';
+import { parseBranchData, serializeBranchData, createDefaultBranchData, BranchChoice } from '../../utils/branch-utils';
+
+// Custom node types
+const nodeTypes = {
+  branch: BranchNode,
+};
 
 interface StoryEditorProps {
   storyId: string;
@@ -39,6 +47,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [allPassages, setAllPassages] = useState<Passage[]>([]);
   const [storyVariables, setStoryVariables] = useState<string[]>([]);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showMacroGuide, setShowMacroGuide] = useState(false);
 
   useEffect(() => {
     fetchStory();
@@ -73,36 +82,51 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       setStoryVariables(allVars);
 
       // Convert passages to nodes
-      const newNodes: Node[] = data.passages.map((p) => ({
-        id: p.id,
-        position: { x: p.position_x, y: p.position_y },
-        data: { label: p.name, passage: p },
-        style: {
-          width: p.width,
-          minHeight: p.height,
-          padding: '10px',
-          backgroundColor:
-            p.passage_type === 'start'
-              ? '#D1FAE5'
-              : p.passage_type === 'end'
-              ? '#FEE2E2'
-              : p.passage_type === 'branch'
-              ? '#FEF3C7'
-              : '#FFFFFF',
-          border: '2px solid #E5E7EB',
-          borderRadius: '8px',
-        },
-      }));
+      const newNodes: Node[] = data.passages.map((p) => {
+        const isBranch = p.passage_type === 'branch';
+        return {
+          id: p.id,
+          type: isBranch ? 'branch' : undefined,
+          position: { x: p.position_x, y: p.position_y },
+          data: { label: p.name, passage: p },
+          style: isBranch ? undefined : {
+            width: p.width,
+            minHeight: p.height,
+            padding: '10px',
+            backgroundColor:
+              p.passage_type === 'start'
+                ? '#D1FAE5'
+                : p.passage_type === 'end'
+                ? '#FEE2E2'
+                : '#FFFFFF',
+            border: '2px solid #E5E7EB',
+            borderRadius: '8px',
+          },
+        };
+      });
+
+      // Create a map for quick passage lookup
+      const passageMap = new Map(data.passages.map(p => [p.id, p]));
 
       // Convert links to edges (from database)
-      const newEdges: Edge[] = data.links.map((l) => ({
-        id: l.id,
-        source: l.source_passage_id,
-        target: l.target_passage_id,
-        label: l.name || '',
-        type: 'smoothstep',
-        animated: l.condition_type !== 'always',
-      }));
+      const newEdges: Edge[] = data.links.map((l) => {
+        const sourcePassage = passageMap.get(l.source_passage_id);
+        const isBranchSource = sourcePassage?.passage_type === 'branch';
+
+        // For branch passages, use link_order to determine which choice handle to use
+        const sourceHandle = isBranchSource ? `choice-${l.link_order}` : undefined;
+
+        return {
+          id: l.id,
+          source: l.source_passage_id,
+          target: l.target_passage_id,
+          sourceHandle,
+          label: isBranchSource ? `${l.link_order + 1}` : (l.name || ''),
+          type: 'smoothstep',
+          animated: l.condition_type !== 'always',
+          style: isBranchSource ? { stroke: '#F59E0B', strokeWidth: 2 } : undefined,
+        };
+      });
 
       // Create edges from [[passage]] links in content
       const contentEdges: Edge[] = [];
@@ -143,11 +167,20 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       if (!connection.source || !connection.target) return;
 
       try {
+        // Check if this is from a branch choice handle
+        let linkOrder = 0;
+        let isBranchLink = false;
+        if (connection.sourceHandle?.startsWith('choice-')) {
+          linkOrder = parseInt(connection.sourceHandle.replace('choice-', ''), 10);
+          isBranchLink = true;
+        }
+
         const response = await api.post('/admin/links', {
           story_id: storyId,
           source_passage_id: connection.source,
           target_passage_id: connection.target,
           condition_type: 'always',
+          link_order: linkOrder,
         });
 
         setEdges((eds) =>
@@ -156,6 +189,8 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
               ...connection,
               id: response.data.id,
               type: 'smoothstep',
+              label: isBranchLink ? `${linkOrder + 1}` : '',
+              style: isBranchLink ? { stroke: '#F59E0B', strokeWidth: 2 } : undefined,
             },
             eds
           )
@@ -337,10 +372,19 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
               <Maximize2 className="w-4 h-4" />
             )}
           </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowMacroGuide(true)}
+            title="Macro Guide"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Macro Guide
+          </Button>
         </div>
 
         <ReactFlow
           nodes={nodes}
+          nodeTypes={nodeTypes}
           edges={edges.map((e) => ({
             ...e,
             style: {
@@ -479,6 +523,12 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
           </div>
         </div>
       )}
+
+      {/* Macro Guide Modal */}
+      <MacroGuideModal
+        isOpen={showMacroGuide}
+        onClose={() => setShowMacroGuide(false)}
+      />
     </div>
   );
 };
@@ -499,12 +549,44 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   onClose,
 }) => {
   const [name, setName] = useState(passage.name);
-  const [content, setContent] = useState(passage.content);
+  const [rawContent, setRawContent] = useState('');
+  const [branchChoices, setBranchChoices] = useState<BranchChoice[]>([]);
   const [passageType, setPassageType] = useState(passage.passage_type);
   const [isSaving, setIsSaving] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('code');
   const [linkedPassages, setLinkedPassages] = useState<string[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
+
+  // Parse content and branch data on initial load
+  useEffect(() => {
+    const { content: parsedContent, branchData } = parseBranchData(passage.content);
+    setRawContent(parsedContent);
+    if (branchData) {
+      setBranchChoices(branchData.choices);
+    } else if (passage.passage_type === 'branch') {
+      setBranchChoices(createDefaultBranchData().choices);
+    } else {
+      setBranchChoices([]);
+    }
+  }, [passage.id, passage.content]);
+
+  // Get the full content (raw content + branch data)
+  const getFullContent = () => {
+    if (passageType === 'branch' && branchChoices.length > 0) {
+      return serializeBranchData(rawContent, { choices: branchChoices });
+    }
+    return rawContent;
+  };
+
+  // For backward compatibility
+  const content = getFullContent();
+  const setContent = (newContent: string) => {
+    const { content: parsed, branchData } = parseBranchData(newContent);
+    setRawContent(parsed);
+    if (branchData) {
+      setBranchChoices(branchData.choices);
+    }
+  };
 
   // Handle ESC key to exit content maximize mode
   useEffect(() => {
@@ -523,11 +605,18 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     setLinkedPassages(links);
   }, [content]);
 
+  // Initialize branch choices when type changes to branch
+  useEffect(() => {
+    if (passageType === 'branch' && branchChoices.length === 0) {
+      setBranchChoices(createDefaultBranchData().choices);
+    }
+  }, [passageType]);
+
   // Reset state when passage changes
   useEffect(() => {
     setName(passage.name);
-    setContent(passage.content);
     setPassageType(passage.passage_type);
+    // Content is handled by the separate useEffect above
   }, [passage.id]);
 
   const handleSave = async () => {
@@ -734,6 +823,83 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Branch Choices Editor */}
+      {passageType === 'branch' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-amber-800">
+              Branch Choices ({branchChoices.length})
+            </h4>
+            <button
+              type="button"
+              onClick={() => setBranchChoices([...branchChoices, { button: '', description: '' }])}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              Add Choice
+            </button>
+          </div>
+          <div className="space-y-3">
+            {branchChoices.map((choice, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2 bg-white rounded-lg p-3 border border-amber-200"
+              >
+                <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full text-amber-700 font-bold text-sm flex-shrink-0">
+                  {index + 1}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Button Text</label>
+                    <input
+                      type="text"
+                      value={choice.button}
+                      onChange={(e) => {
+                        const newChoices = [...branchChoices];
+                        newChoices[index] = { ...choice, button: e.target.value };
+                        setBranchChoices(newChoices);
+                      }}
+                      placeholder="Enter button text..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={choice.description}
+                      onChange={(e) => {
+                        const newChoices = [...branchChoices];
+                        newChoices[index] = { ...choice, description: e.target.value };
+                        setBranchChoices(newChoices);
+                      }}
+                      placeholder="Enter description..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+                {branchChoices.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newChoices = branchChoices.filter((_, i) => i !== index);
+                      setBranchChoices(newChoices);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                    title="Remove choice"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-amber-600 mt-3">
+            Each choice will create a numbered connection point on the canvas. Connect each to a target passage.
+          </p>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Bookmark, BookmarkCheck, Pencil, GitFork } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Pencil, GitFork, ChevronRight } from 'lucide-react';
 import { useStoryStore } from '../../stores/storyStore';
 import { useAuthStore } from '../../stores/authStore';
 import { TwinePassageRenderer } from '../reader/TwinePassageRenderer';
@@ -9,6 +9,7 @@ import {
   TwineState,
   extractLinksFromContent,
 } from '../../utils/twine-runtime';
+import { parseBranchData } from '../../utils/branch-utils';
 import type { PassageWithContext } from '../../types';
 
 interface PassageViewProps {
@@ -19,12 +20,21 @@ interface PassageViewProps {
 const TWINE_STATE_KEY = 'twine_story_state';
 
 export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
-  const { passage } = context;
-  const { bookmarks, addBookmark, removeBookmark, navigateToPassage, currentStory, refreshCurrentPassage } =
+  const { passage, available_links } = context;
+  const { bookmarks, addBookmark, removeBookmark, navigateToPassage, navigateViaLink, currentStory, refreshCurrentPassage } =
     useStoryStore();
   const { isAuthenticated, user } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [passageContent, setPassageContent] = useState(passage.content);
+
+  // Parse branch data from content
+  const { content: cleanContent, branchData } = parseBranchData(passage.content || '');
+  const branchChoices = branchData?.choices || [];
+
+  // Get links sorted by link_order for matching with branch choices
+  const sortedLinks = [...available_links]
+    .filter(l => l.condition_type !== 'user_selection')
+    .sort((a, b) => a.link_order - b.link_order);
 
   // Check if user can edit (super_admin or editor role)
   const canEdit = isAuthenticated && user && (user.role === 'super_admin' || user.role === 'editor');
@@ -154,15 +164,115 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
         />
       ) : (
         <TwinePassageRenderer
-          content={passageContent || ''}
+          content={passage.passage_type === 'branch' ? cleanContent : (passageContent || '')}
           state={twineState}
           onStateChange={handleStateChange}
           onNavigate={handleNavigate}
         />
       )}
 
-      {/* Show branch indicator for branch passages */}
-      {passage.passage_type === 'branch' && (
+      {/* Show branch choices for branch passages */}
+      {passage.passage_type === 'branch' && branchChoices.length > 0 && (
+        <div className="mt-8 pt-6 border-t-2 border-amber-200">
+          {/* Branch header */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-300" />
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full">
+              <GitFork className="w-5 h-5 text-amber-600" />
+              <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
+                Choose Your Path
+              </span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-300" />
+          </div>
+
+          {/* Branch choices */}
+          <div className="space-y-3">
+            {branchChoices.map((choice, index) => {
+              const matchingLink = sortedLinks[index];
+              const handleClick = () => {
+                if (matchingLink) {
+                  navigateViaLink(matchingLink.id);
+                }
+              };
+
+              return (
+                <button
+                  key={index}
+                  onClick={handleClick}
+                  disabled={!matchingLink}
+                  className={`w-full group relative p-5 bg-white border-2 rounded-xl text-left transition-all duration-200 ${
+                    matchingLink
+                      ? 'border-amber-200 hover:border-amber-400 hover:shadow-lg hover:scale-[1.01] cursor-pointer'
+                      : 'border-gray-200 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Choice number badge */}
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                      matchingLink
+                        ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-md'
+                        : 'bg-gray-200 text-gray-400'
+                    }`}>
+                      {index + 1}
+                    </div>
+
+                    {/* Choice content */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`font-semibold text-lg mb-1 ${
+                        matchingLink
+                          ? 'text-gray-800 group-hover:text-amber-700'
+                          : 'text-gray-400'
+                      }`}>
+                        {choice.button || `Option ${index + 1}`}
+                      </h4>
+                      {choice.description && (
+                        <p className={`text-sm ${
+                          matchingLink ? 'text-gray-500' : 'text-gray-400'
+                        }`}>
+                          {choice.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Arrow icon */}
+                    <div className={`flex-shrink-0 ${
+                      matchingLink
+                        ? 'text-amber-400 group-hover:text-amber-600 group-hover:translate-x-1'
+                        : 'text-gray-300'
+                    } transition-all duration-200`}>
+                      <ChevronRight className="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  {/* Not connected warning */}
+                  {!matchingLink && (
+                    <div className="mt-2 text-xs text-red-500">
+                      ⚠ Not connected to a passage
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Fallback if no branch data but has links */}
+          {branchChoices.length === 0 && sortedLinks.length > 0 && (
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+              <div className="p-2 bg-amber-100 rounded-full">
+                <GitFork className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-medium text-amber-800">Decision Point</p>
+                <p className="text-sm text-amber-600">Choose your path below to continue</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fallback for branch passages without branch data */}
+      {passage.passage_type === 'branch' && branchChoices.length === 0 && (
         <div className="mt-6 pt-6 border-t border-amber-200">
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
             <div className="p-2 bg-amber-100 rounded-full">
