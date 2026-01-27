@@ -171,16 +171,13 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
       const passage = response.data.passage;
       set((state) => {
-        // Truncate history after current index if we're navigating from a back position
-        const truncatedHistory = state.navigationHistory.slice(0, state.currentHistoryIndex + 1);
-        const truncatedHistoryWithNames = state.navigationHistoryWithNames.slice(0, state.currentHistoryIndex + 1);
-
+        // Don't truncate - keep all history and append new navigation
         return {
           currentPassage: response.data,
           previousPassageId: prev || null,
-          navigationHistory: [...truncatedHistory, passage.id],
-          navigationHistoryWithNames: [...truncatedHistoryWithNames, { id: passage.id, name: passage.name }],
-          currentHistoryIndex: truncatedHistoryWithNames.length,
+          navigationHistory: [...state.navigationHistory, passage.id],
+          navigationHistoryWithNames: [...state.navigationHistoryWithNames, { id: passage.id, name: passage.name }],
+          currentHistoryIndex: state.navigationHistoryWithNames.length,
         };
       });
       get().saveLastVisit();
@@ -200,16 +197,13 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       });
       const passage = response.data.passage;
       set((state) => {
-        // Truncate history after current index if we're navigating from a back position
-        const truncatedHistory = state.navigationHistory.slice(0, state.currentHistoryIndex + 1);
-        const truncatedHistoryWithNames = state.navigationHistoryWithNames.slice(0, state.currentHistoryIndex + 1);
-
+        // Don't truncate - keep all history and append new navigation
         return {
           currentPassage: response.data,
           previousPassageId: currentPassageId,
-          navigationHistory: [...truncatedHistory, passage.id],
-          navigationHistoryWithNames: [...truncatedHistoryWithNames, { id: passage.id, name: passage.name }],
-          currentHistoryIndex: truncatedHistoryWithNames.length,
+          navigationHistory: [...state.navigationHistory, passage.id],
+          navigationHistoryWithNames: [...state.navigationHistoryWithNames, { id: passage.id, name: passage.name }],
+          currentHistoryIndex: state.navigationHistoryWithNames.length,
         };
       });
       get().saveLastVisit();

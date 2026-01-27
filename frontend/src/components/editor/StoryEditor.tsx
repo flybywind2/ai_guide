@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -26,7 +26,6 @@ import { BranchNode } from './BranchNode';
 import { extractPassageLinks, extractVariables } from './twine-syntax';
 import { parseBranchData, serializeBranchData, createDefaultBranchData, BranchChoice } from '../../utils/branch-utils';
 
-// Custom node types
 const nodeTypes = {
   branch: BranchNode,
 };
@@ -41,7 +40,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [story, setStory] = useState<StoryWithPassages | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedPassageId, setSelectedPassageId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [allPassages, setAllPassages] = useState<Passage[]>([]);
@@ -49,11 +48,14 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [showMacroGuide, setShowMacroGuide] = useState(false);
 
+  const selectedPassage = selectedPassageId 
+    ? allPassages.find(p => p.id === selectedPassageId) 
+    : null;
+
   useEffect(() => {
     fetchStory();
   }, [storyId]);
 
-  // Handle ESC key to exit fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMaximized) {
@@ -64,14 +66,13 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMaximized]);
 
-  const fetchStory = async () => {
+  const fetchStory = useCallback(async () => {
     try {
       const response = await api.get(`/admin/stories/${storyId}`);
       const data: StoryWithPassages = response.data;
       setStory(data);
       setAllPassages(data.passages);
 
-      // Extract all variables from all passages
       const allVars: string[] = [];
       data.passages.forEach((p) => {
         const vars = extractVariables(p.content);
@@ -81,7 +82,6 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       });
       setStoryVariables(allVars);
 
-      // Convert passages to nodes
       const newNodes: Node[] = data.passages.map((p) => {
         const isBranch = p.passage_type === 'branch';
         return {
@@ -105,15 +105,11 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
         };
       });
 
-      // Create a map for quick passage lookup
       const passageMap = new Map(data.passages.map(p => [p.id, p]));
 
-      // Convert links to edges (from database)
       const newEdges: Edge[] = data.links.map((l) => {
         const sourcePassage = passageMap.get(l.source_passage_id);
         const isBranchSource = sourcePassage?.passage_type === 'branch';
-
-        // For branch passages, use link_order to determine which choice handle to use
         const sourceHandle = isBranchSource ? `choice-${l.link_order}` : undefined;
 
         return {
@@ -125,21 +121,22 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
           type: 'smoothstep',
           animated: l.condition_type !== 'always',
           style: isBranchSource ? { stroke: '#F59E0B', strokeWidth: 2 } : undefined,
+          data: {
+            conditionType: l.condition_type,
+            conditionValue: l.condition_value,
+          },
         };
       });
 
-      // Create edges from [[passage]] links in content
       const contentEdges: Edge[] = [];
       const existingEdgeSet = new Set(data.links.map(l => `${l.source_passage_id}-${l.target_passage_id}`));
 
       data.passages.forEach((passage) => {
         const linkedNames = extractPassageLinks(passage.content || '');
         linkedNames.forEach((linkName) => {
-          // Find target passage by name
           const targetPassage = data.passages.find((p) => p.name === linkName);
           if (targetPassage && targetPassage.id !== passage.id) {
             const edgeKey = `${passage.id}-${targetPassage.id}`;
-            // Only add if no database link exists
             if (!existingEdgeSet.has(edgeKey)) {
               existingEdgeSet.add(edgeKey);
               contentEdges.push({
@@ -157,17 +154,19 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
       setNodes(newNodes);
       setEdges([...newEdges, ...contentEdges]);
+      
+      return data;
     } catch (error) {
       console.error('Failed to fetch story:', error);
+      return null;
     }
-  };
+  }, [storyId, setNodes, setEdges]);
 
   const onConnect = useCallback(
     async (connection: Connection) => {
       if (!connection.source || !connection.target) return;
 
       try {
-        // Check if this is from a branch choice handle
         let linkOrder = 0;
         let isBranchLink = false;
         if (connection.sourceHandle?.startsWith('choice-')) {
@@ -267,21 +266,35 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
     }
   };
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNode(node);
-    setSelectedEdge(null);
-  }, []);
+const onNodeClick = useCallback(async (_: React.MouseEvent, node: Node) => {
+  setSelectedPassageId(null);
+  setSelectedEdge(null);
+  
+  const data = await fetchStory();
+  
+  if (data) {
+    setTimeout(() => {
+      setSelectedPassageId(node.id);
+    }, 50);
+  }
+}, [fetchStory]);
 
-  const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNode(node);
-    setSelectedEdge(null);
-  }, []);
-
+const onNodeDoubleClick = useCallback(async (_: React.MouseEvent, node: Node) => {
+  setSelectedPassageId(null);
+  setSelectedEdge(null);
+  
+  const data = await fetchStory();
+  
+  if (data) {
+    setTimeout(() => {
+      setSelectedPassageId(node.id);
+    }, 50);
+  }
+}, [fetchStory]);
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    // Only allow selecting database edges (not content-based edges)
     if (!edge.id.startsWith('content-')) {
       setSelectedEdge(edge);
-      setSelectedNode(null);
+      setSelectedPassageId(null);
     }
   }, []);
 
@@ -290,7 +303,6 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   }, []);
 
   const deleteEdge = useCallback(async (edgeId: string) => {
-    // Don't delete content-based edges
     if (edgeId.startsWith('content-')) return;
 
     try {
@@ -315,11 +327,52 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
     }
   }, [setEdges]);
 
-  // Handle keyboard events for edge deletion
+  const updateLinkCondition = useCallback(async (
+    edgeId: string,
+    conditionType: string,
+    conditionValue?: string
+  ) => {
+    try {
+      await api.put(`/admin/links/${edgeId}`, {
+        condition_type: conditionType,
+        condition_value: conditionValue,
+      });
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edgeId
+            ? {
+                ...e,
+                animated: conditionType !== 'always',
+                data: {
+                  ...e.data,
+                  conditionType,
+                  conditionValue,
+                },
+              }
+            : e
+        )
+      );
+      setSelectedEdge((prev) =>
+        prev
+          ? {
+              ...prev,
+              animated: conditionType !== 'always',
+              data: {
+                ...prev.data,
+                conditionType,
+                conditionValue,
+              },
+            }
+          : null
+      );
+    } catch (error) {
+      console.error('Failed to update link condition:', error);
+    }
+  }, [setEdges]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdge && !selectedNode) {
-        // Don't delete if user is typing in an input
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdge && !selectedPassageId) {
         if (document.activeElement?.tagName === 'INPUT' ||
             document.activeElement?.tagName === 'TEXTAREA') {
           return;
@@ -329,11 +382,15 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedEdge, selectedNode, deleteEdge]);
+  }, [selectedEdge, selectedPassageId, deleteEdge]);
 
   const testStory = () => {
     window.open(`/story/${storyId}`, '_blank');
   };
+
+  const closeEditor = useCallback(() => {
+    setSelectedPassageId(null);
+  }, []);
 
   if (!story) {
     return <div className="p-8">Loading...</div>;
@@ -416,17 +473,17 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
         </ReactFlow>
       </div>
 
-      {selectedNode && (
+      {selectedPassage && (
         <div className="w-[600px] bg-white border-l border-gray-200 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div>
               <h3 className="font-semibold">Edit Passage</h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                {selectedNode.data.passage.passage_type} passage
+                {selectedPassage.passage_type} passage
               </p>
             </div>
             <button
-              onClick={() => setSelectedNode(null)}
+              onClick={closeEditor}
               className="p-1 rounded hover:bg-gray-100"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -434,12 +491,12 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <PassageEditForm
-              key={selectedNode.id}
-              passage={selectedNode.data.passage as Passage}
+              key={selectedPassage.id}
+              passage={selectedPassage}
               allPassages={allPassages}
               storyVariables={storyVariables}
               onUpdate={fetchStory}
-              onClose={() => setSelectedNode(null)}
+              onClose={closeEditor}
             />
           </div>
         </div>
@@ -497,6 +554,60 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
               </p>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium mb-1">조건 타입</label>
+              <select
+                value={selectedEdge.data?.conditionType || 'always'}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  updateLinkCondition(
+                    selectedEdge.id,
+                    newType,
+                    newType === 'previous_passage' ? selectedEdge.data?.conditionValue : undefined
+                  );
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="always">항상 표시</option>
+                <option value="previous_passage">이전 페이지 조건부</option>
+                <option value="user_selection">사용자 선택</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                {selectedEdge.data?.conditionType === 'always' && '단일 진행용. 여러 개 있어도 첫 번째만 "다음" 버튼으로 표시됩니다.'}
+                {selectedEdge.data?.conditionType === 'previous_passage' && '특정 페이지에서 왔을 때만 표시됩니다. 조건부 단일 진행에 사용하세요.'}
+                {selectedEdge.data?.conditionType === 'user_selection' && '분기 선택용. 모든 링크가 개별 선택 버튼으로 표시됩니다.'}
+              </p>
+            </div>
+
+            {selectedEdge.data?.conditionType === 'previous_passage' && (
+              <div>
+                <label className="block text-sm font-medium mb-1">필요한 이전 페이지</label>
+                <select
+                  value={selectedEdge.data?.conditionValue || ''}
+                  onChange={(e) => {
+                    updateLinkCondition(
+                      selectedEdge.id,
+                      'previous_passage',
+                      e.target.value
+                    );
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">페이지 선택...</option>
+                  {allPassages
+                    .filter((p) => p.id !== selectedEdge.target)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  선택한 페이지에서 왔을 때만 이 링크가 표시됩니다
+                </p>
+              </div>
+            )}
+
             <div className="pt-4 border-t">
               <p className="text-sm text-gray-600 mb-3">
                 <span className="font-medium">From:</span>{' '}
@@ -524,7 +635,6 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
         </div>
       )}
 
-      {/* Macro Guide Modal */}
       <MacroGuideModal
         isOpen={showMacroGuide}
         onClose={() => setShowMacroGuide(false)}
@@ -556,21 +666,108 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [editorMode, setEditorMode] = useState<EditorMode>('code');
   const [linkedPassages, setLinkedPassages] = useState<string[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
+  
+  const isInitializedRef = useRef(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const initialBranchChoicesRef = useRef<string>(''); // 초기값 저장용
 
-  // Parse content and branch data on initial load
+  // 초기화
   useEffect(() => {
-    const { content: parsedContent, branchData } = parseBranchData(passage.content);
-    setRawContent(parsedContent);
-    if (branchData) {
-      setBranchChoices(branchData.choices);
-    } else if (passage.passage_type === 'branch') {
-      setBranchChoices(createDefaultBranchData().choices);
-    } else {
-      setBranchChoices([]);
+    console.log('🔵 PassageEditForm 초기화 시작');
+    
+    // 자동 저장 타이머 취소
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
     }
-  }, [passage.id, passage.content]);
+    
+    isInitializedRef.current = false;
+    
+    const { content: parsedContent, branchData } = parseBranchData(passage.content);
+    
+    setName(passage.name);
+    setPassageType(passage.passage_type);
+    setRawContent(parsedContent);
+    
+    let choices: BranchChoice[] = [];
+    if (branchData) {
+      choices = branchData.choices;
+    } else if (passage.passage_type === 'branch') {
+      choices = createDefaultBranchData().choices;
+    }
+    
+    setBranchChoices(choices);
+    
+    // 초기값 저장 (자동 저장 시 비교용)
+    initialBranchChoicesRef.current = JSON.stringify(choices);
+    
+    console.log('🔵 branchChoices 설정 완료:', choices);
+    
+    // 200ms 후 초기화 완료 (충분한 시간 확보)
+    const timer = setTimeout(() => {
+      isInitializedRef.current = true;
+      console.log('🔵 초기화 완료, 자동 저장 활성화');
+    }, 200);
+    
+    return () => {
+      clearTimeout(timer);
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [passage.id]);
 
-  // Get the full content (raw content + branch data)
+  // Branch choices 자동 저장 - 초기값과 다를 때만 저장
+  useEffect(() => {
+    // 초기화 전이면 무시
+    if (!isInitializedRef.current) {
+      console.log('⏳ 자동 저장 스킵: 초기화 중');
+      return;
+    }
+    
+    if (passageType !== 'branch') return;
+    if (branchChoices.length === 0) return;
+    
+    // 현재 값과 초기값 비교
+    const currentValue = JSON.stringify(branchChoices);
+    if (currentValue === initialBranchChoicesRef.current) {
+      console.log('⏳ 자동 저장 스킵: 초기값과 동일');
+      return;
+    }
+    
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    console.log('⏳ 자동 저장 예약 (500ms 후)');
+    
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        const fullContent = serializeBranchData(rawContent, { choices: branchChoices });
+        
+        await api.put(`/admin/passages/${passage.id}`, {
+          name,
+          content: fullContent,
+          passage_type: passageType,
+        });
+        
+        // 저장 후 초기값 업데이트
+        initialBranchChoicesRef.current = JSON.stringify(branchChoices);
+        
+        console.log('✅ Branch choices auto-saved');
+      } catch (error) {
+        console.error('Failed to auto-save branch choices:', error);
+      }
+    }, 500);
+    
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [branchChoices, passageType, rawContent, name, passage.id]);
+
+  // 저장할 때 사용하는 전체 content
   const getFullContent = () => {
     if (passageType === 'branch' && branchChoices.length > 0) {
       return serializeBranchData(rawContent, { choices: branchChoices });
@@ -578,17 +775,6 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     return rawContent;
   };
 
-  // For backward compatibility
-  const content = getFullContent();
-  const setContent = (newContent: string) => {
-    const { content: parsed, branchData } = parseBranchData(newContent);
-    setRawContent(parsed);
-    if (branchData) {
-      setBranchChoices(branchData.choices);
-    }
-  };
-
-  // Handle ESC key to exit content maximize mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isContentMaximized) {
@@ -599,34 +785,31 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isContentMaximized]);
 
-  // Update linked passages when content changes
   useEffect(() => {
-    const links = extractPassageLinks(content);
+    const links = extractPassageLinks(rawContent);
     setLinkedPassages(links);
-  }, [content]);
+  }, [rawContent]);
 
-  // Initialize branch choices when type changes to branch
   useEffect(() => {
-    if (passageType === 'branch' && branchChoices.length === 0) {
+    if (passageType === 'branch' && branchChoices.length === 0 && isInitializedRef.current) {
       setBranchChoices(createDefaultBranchData().choices);
     }
   }, [passageType]);
 
-  // Reset state when passage changes
-  useEffect(() => {
-    setName(passage.name);
-    setPassageType(passage.passage_type);
-    // Content is handled by the separate useEffect above
-  }, [passage.id]);
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const fullContent = getFullContent();
+      
       await api.put(`/admin/passages/${passage.id}`, {
         name,
-        content,
+        content: fullContent,
         passage_type: passageType,
       });
+      
+      // 저장 후 초기값 업데이트
+      initialBranchChoicesRef.current = JSON.stringify(branchChoices);
+      
       onUpdate();
     } catch (error) {
       console.error('Failed to update passage:', error);
@@ -656,7 +839,6 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     return response.data.url;
   };
 
-  // Get other passages (excluding current one)
   const otherPassages = allPassages.filter((p) => p.id !== passage.id);
 
   return (
@@ -728,25 +910,23 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
 
         {editorMode === 'code' ? (
           <PassageCodeEditor
-            content={content}
-            onChange={setContent}
+            content={rawContent}
+            onChange={setRawContent}
             passages={otherPassages}
             variables={storyVariables}
             placeholder="Enter passage content with Twine-style macros..."
           />
         ) : (
           <TipTapEditor
-            content={content}
-            onChange={setContent}
+            content={rawContent}
+            onChange={setRawContent}
             onImageUpload={handleImageUpload}
           />
         )}
       </div>
 
-      {/* Maximized Content Editor Modal */}
       {isContentMaximized && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col">
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center gap-4">
               <h3 className="font-semibold text-lg">Edit Content: {name}</h3>
@@ -790,13 +970,12 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
             </div>
           </div>
 
-          {/* Editor */}
           <div className="flex-1 overflow-auto p-4">
             {editorMode === 'code' ? (
               <div className="h-full [&_.passage-code-editor]:h-full [&_.passage-code-editor>div:last-of-type]:h-[calc(100%-theme(spacing.14))] [&_.cm-editor]:h-full [&_.cm-scroller]:h-full">
                 <PassageCodeEditor
-                  content={content}
-                  onChange={setContent}
+                  content={rawContent}
+                  onChange={setRawContent}
                   passages={otherPassages}
                   variables={storyVariables}
                   placeholder="Enter passage content with Twine-style macros..."
@@ -805,15 +984,14 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
             ) : (
               <div className="h-full [&>div]:h-full [&_.ProseMirror]:min-h-[calc(100vh-200px)]">
                 <TipTapEditor
-                  content={content}
-                  onChange={setContent}
+                  content={rawContent}
+                  onChange={setRawContent}
                   onImageUpload={handleImageUpload}
                 />
               </div>
             )}
           </div>
 
-          {/* Footer */}
           <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setIsContentMaximized(false)}>
               Close
@@ -826,16 +1004,19 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         </div>
       )}
 
-      {/* Branch Choices Editor */}
       {passageType === 'branch' && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium text-amber-800">
               Branch Choices ({branchChoices.length})
+              <span className="ml-2 text-xs text-amber-600 font-normal">(Auto-saved)</span>
             </h4>
             <button
               type="button"
-              onClick={() => setBranchChoices([...branchChoices, { button: '', description: '' }])}
+              onClick={() => setBranchChoices([
+                ...branchChoices, 
+                { id: crypto.randomUUID(), button: '', description: '' }
+              ])}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
             >
               <Plus className="w-3 h-3" />
@@ -845,7 +1026,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
           <div className="space-y-3">
             {branchChoices.map((choice, index) => (
               <div
-                key={index}
+                key={choice.id}
                 className="flex items-start gap-2 bg-white rounded-lg p-3 border border-amber-200"
               >
                 <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full text-amber-700 font-bold text-sm flex-shrink-0">
@@ -858,8 +1039,9 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                       type="text"
                       value={choice.button}
                       onChange={(e) => {
-                        const newChoices = [...branchChoices];
-                        newChoices[index] = { ...choice, button: e.target.value };
+                        const newChoices = branchChoices.map((c) =>
+                          c.id === choice.id ? { ...c, button: e.target.value } : c
+                        );
                         setBranchChoices(newChoices);
                       }}
                       placeholder="Enter button text..."
@@ -872,8 +1054,9 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                       type="text"
                       value={choice.description}
                       onChange={(e) => {
-                        const newChoices = [...branchChoices];
-                        newChoices[index] = { ...choice, description: e.target.value };
+                        const newChoices = branchChoices.map((c) =>
+                          c.id === choice.id ? { ...c, description: e.target.value } : c
+                        );
                         setBranchChoices(newChoices);
                       }}
                       placeholder="Enter description..."
@@ -885,7 +1068,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const newChoices = branchChoices.filter((_, i) => i !== index);
+                      const newChoices = branchChoices.filter((c) => c.id !== choice.id);
                       setBranchChoices(newChoices);
                     }}
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
@@ -903,7 +1086,6 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         </div>
       )}
 
-      {/* Linked passages preview */}
       {linkedPassages.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <h4 className="text-sm font-medium text-blue-800 mb-2">
@@ -934,7 +1116,6 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         </div>
       )}
 
-      {/* Variables preview */}
       {storyVariables.length > 0 && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <h4 className="text-sm font-medium text-green-800 mb-2">
@@ -971,5 +1152,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     </div>
   );
 };
+
+
 
 export default StoryEditor;

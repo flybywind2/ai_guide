@@ -3,3 +3,8 @@ backend/.env
 frontend/.env
 frontend/node_modules/
 backend/venv/
+GEMINI.md
+settings.local.json
+.claude
+.omc
+.playwright-mcp

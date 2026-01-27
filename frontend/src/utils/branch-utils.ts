@@ -1,6 +1,7 @@
 // Utility functions for branch passage data
 
 export interface BranchChoice {
+  id: string;
   button: string;
   description: string;
 }
@@ -32,6 +33,13 @@ export function parseBranchData(content: string): { content: string; branchData:
 
   try {
     const branchData = JSON.parse(jsonStr) as BranchData;
+    
+    // id 없는 기존 데이터에 id 추가 (마이그레이션)
+    branchData.choices = branchData.choices.map((choice) => ({
+      ...choice,
+      id: choice.id || crypto.randomUUID(),
+    }));
+    
     return { content: cleanContent, branchData };
   } catch {
     return { content: cleanContent, branchData: null };
@@ -59,8 +67,8 @@ export function serializeBranchData(content: string, branchData: BranchData | nu
 export function createDefaultBranchData(): BranchData {
   return {
     choices: [
-      { button: 'Option A', description: 'Description for option A' },
-      { button: 'Option B', description: 'Description for option B' },
+      { id: crypto.randomUUID(), button: 'Option A', description: 'Description for option A' },
+      { id: crypto.randomUUID(), button: 'Option B', description: 'Description for option B' },
     ],
   };
 }
