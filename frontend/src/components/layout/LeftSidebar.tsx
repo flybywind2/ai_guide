@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Bookmark, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bookmark, List, History } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useStoryStore } from '../../stores/storyStore';
 import type { Link as LinkType } from '../../types';
@@ -10,7 +10,15 @@ interface LeftSidebarProps {
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   const { leftSidebarCollapsed, toggleLeftSidebar } = useUIStore();
-  const { bookmarks, currentPassage, navigateToPassage, currentStory } = useStoryStore();
+  const {
+    bookmarks,
+    currentPassage,
+    navigateToPassage,
+    currentStory,
+    navigationHistoryWithNames,
+    currentHistoryIndex,
+    navigateToHistoryIndex,
+  } = useStoryStore();
 
   const filteredBookmarks = bookmarks.filter(
     (b) => b.story_id === currentStory?.id
@@ -67,6 +75,35 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
             </ul>
           ) : (
             <p className="text-sm text-gray-400">No bookmarks yet</p>
+          )}
+        </div>
+
+        {/* Navigation History */}
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
+            <History className="w-4 h-4" />
+            <span>History</span>
+          </div>
+          {navigationHistoryWithNames.length > 0 ? (
+            <ul className="space-y-1">
+              {navigationHistoryWithNames.map((entry, index) => (
+                <li key={`${entry.id}-${index}`}>
+                  <button
+                    onClick={() => navigateToHistoryIndex(index)}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                      index === currentHistoryIndex
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <span className="text-gray-400 mr-2">{index + 1}.</span>
+                    {entry.name || 'Untitled'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-400">No history yet</p>
           )}
         </div>
 

@@ -12,6 +12,7 @@ import {
   Node,
   NodeChange,
   EdgeChange,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import api from '../../services/api';
@@ -33,6 +34,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [allPassages, setAllPassages] = useState<Passage[]>([]);
   const [storyVariables, setStoryVariables] = useState<string[]>([]);
@@ -232,11 +234,67 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
+    setSelectedEdge(null);
   }, []);
 
   const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
+    setSelectedEdge(null);
   }, []);
+
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    // Only allow selecting database edges (not content-based edges)
+    if (!edge.id.startsWith('content-')) {
+      setSelectedEdge(edge);
+      setSelectedNode(null);
+    }
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedEdge(null);
+  }, []);
+
+  const deleteEdge = useCallback(async (edgeId: string) => {
+    // Don't delete content-based edges
+    if (edgeId.startsWith('content-')) return;
+
+    try {
+      await api.delete(`/admin/links/${edgeId}`);
+      setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+      setSelectedEdge(null);
+    } catch (error) {
+      console.error('Failed to delete link:', error);
+    }
+  }, [setEdges]);
+
+  const updateEdgeLabel = useCallback(async (edgeId: string, newLabel: string) => {
+    try {
+      await api.put(`/admin/links/${edgeId}`, { name: newLabel });
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === edgeId ? { ...e, label: newLabel } : e
+        )
+      );
+    } catch (error) {
+      console.error('Failed to update link label:', error);
+    }
+  }, [setEdges]);
+
+  // Handle keyboard events for edge deletion
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdge && !selectedNode) {
+        // Don't delete if user is typing in an input
+        if (document.activeElement?.tagName === 'INPUT' ||
+            document.activeElement?.tagName === 'TEXTAREA') {
+          return;
+        }
+        deleteEdge(selectedEdge.id);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedEdge, selectedNode, deleteEdge]);
 
   const testStory = () => {
     window.open(`/story/${storyId}`, '_blank');
@@ -283,13 +341,30 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={edges.map((e) => ({
+            ...e,
+            style: {
+              ...e.style,
+              stroke: selectedEdge?.id === e.id ? '#3B82F6' : e.style?.stroke,
+              strokeWidth: selectedEdge?.id === e.id ? 3 : e.style?.strokeWidth || 2,
+            },
+            labelStyle: {
+              fill: selectedEdge?.id === e.id ? '#3B82F6' : '#374151',
+              fontWeight: selectedEdge?.id === e.id ? 600 : 400,
+            },
+          }))}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
+          onEdgeClick={onEdgeClick}
+          onPaneClick={onPaneClick}
           fitView
+          selectionOnDrag
+          selectionMode={SelectionMode.Partial}
+          panOnDrag={[1, 2]}
+          selectNodesOnDrag={false}
         >
           <Background />
           <Controls />
@@ -322,6 +397,85 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
               onUpdate={fetchStory}
               onClose={() => setSelectedNode(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {selectedEdge && (
+        <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Edit Link</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Connection between passages
+              </p>
+            </div>
+            <button
+              onClick={() => setSelectedEdge(null)}
+              className="p-1 rounded hover:bg-gray-100"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Label (optional)</label>
+              <input
+                type="text"
+                value={(selectedEdge.label as string) || ''}
+                onChange={(e) => {
+                  const newLabel = e.target.value;
+                  setEdges((eds) =>
+                    eds.map((edge) =>
+                      edge.id === selectedEdge.id
+                        ? { ...edge, label: newLabel }
+                        : edge
+                    )
+                  );
+                  setSelectedEdge((prev) =>
+                    prev ? { ...prev, label: newLabel } : null
+                  );
+                }}
+                onBlur={(e) => {
+                  updateEdgeLabel(selectedEdge.id, e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    updateEdgeLabel(selectedEdge.id, (e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
+                placeholder="Enter link label..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Label appears on the connection line
+              </p>
+            </div>
+
+            <div className="pt-4 border-t">
+              <p className="text-sm text-gray-600 mb-3">
+                <span className="font-medium">From:</span>{' '}
+                {allPassages.find((p) => p.id === selectedEdge.source)?.name || 'Unknown'}
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                <span className="font-medium">To:</span>{' '}
+                {allPassages.find((p) => p.id === selectedEdge.target)?.name || 'Unknown'}
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              onClick={() => deleteEdge(selectedEdge.id)}
+              className="w-full text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Link
+            </Button>
+
+            <p className="text-xs text-gray-400 text-center">
+              Tip: Press Delete or Backspace to remove selected link
+            </p>
           </div>
         </div>
       )}

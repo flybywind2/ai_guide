@@ -5,7 +5,8 @@ from typing import List
 from app.database import get_db
 from app.models.story import Story
 from app.models.passage import Passage
-from app.schemas.story import StoryResponse, PassageResponse, PassageWithContext
+from app.models.link import Link
+from app.schemas.story import StoryResponse, PassageResponse, PassageWithContext, StoryWithPassages, LinkResponse
 from app.services.story_engine import StoryEngine
 import json
 
@@ -59,6 +60,67 @@ async def get_story(story_id: str, db: AsyncSession = Depends(get_db)):
         created_by=story.created_by,
         created_at=story.created_at,
         updated_at=story.updated_at
+    )
+
+@router.get("/{story_id}/full", response_model=StoryWithPassages)
+async def get_story_full(story_id: str, db: AsyncSession = Depends(get_db)):
+    """Get full story structure with passages and links (public)"""
+    result = await db.execute(select(Story).where(Story.id == story_id))
+    story = result.scalar_one_or_none()
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    # Get passages
+    result = await db.execute(select(Passage).where(Passage.story_id == story_id))
+    passages = result.scalars().all()
+
+    # Get links
+    result = await db.execute(select(Link).where(Link.story_id == story_id))
+    links = result.scalars().all()
+
+    return StoryWithPassages(
+        id=story.id,
+        name=story.name,
+        description=story.description,
+        start_passage_id=story.start_passage_id,
+        is_active=bool(story.is_active),
+        zoom=story.zoom,
+        tags=json.loads(story.tags) if story.tags else [],
+        sort_order=story.sort_order,
+        icon=story.icon or "book-open",
+        created_by=story.created_by,
+        created_at=story.created_at,
+        updated_at=story.updated_at,
+        passages=[
+            PassageResponse(
+                id=p.id,
+                story_id=p.story_id,
+                name=p.name,
+                content=p.content,
+                passage_type=p.passage_type,
+                tags=json.loads(p.tags) if p.tags else [],
+                position_x=p.position_x,
+                position_y=p.position_y,
+                width=p.width,
+                height=p.height,
+                created_at=p.created_at,
+                updated_at=p.updated_at
+            )
+            for p in passages
+        ],
+        links=[
+            LinkResponse(
+                id=l.id,
+                story_id=l.story_id,
+                source_passage_id=l.source_passage_id,
+                target_passage_id=l.target_passage_id,
+                name=l.name,
+                condition_type=l.condition_type,
+                condition_value=l.condition_value,
+                link_order=l.link_order
+            )
+            for l in links
+        ]
     )
 
 @router.get("/{story_id}/start", response_model=PassageWithContext)

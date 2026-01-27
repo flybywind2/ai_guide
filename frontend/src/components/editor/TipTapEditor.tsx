@@ -79,6 +79,56 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file && onImageUpload) {
+              onImageUpload(file).then((url) => {
+                const { state } = view;
+                const { tr } = state;
+                const pos = state.selection.from;
+                const node = state.schema.nodes.image.create({ src: url });
+                view.dispatch(tr.insert(pos, node));
+              }).catch((error) => {
+                console.error('Failed to upload pasted image:', error);
+              });
+            }
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            event.preventDefault();
+            if (onImageUpload) {
+              onImageUpload(file).then((url) => {
+                const { state } = view;
+                const { tr } = state;
+                const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+                const pos = coordinates?.pos ?? state.selection.from;
+                const node = state.schema.nodes.image.create({ src: url });
+                view.dispatch(tr.insert(pos, node));
+              }).catch((error) => {
+                console.error('Failed to upload dropped image:', error);
+              });
+            }
+            return true;
+          }
+        }
+        return false;
+      },
+    },
   });
 
   if (!editor) {
