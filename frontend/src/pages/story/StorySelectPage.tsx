@@ -133,17 +133,17 @@ export const StorySelectPage: React.FC = () => {
       <Modal
         isOpen={showContinueModal}
         onClose={() => setShowContinueModal(false)}
-        title="Continue where you left off?"
+        title="이어서 진행하시겠습니까?"
       >
         <p className="text-gray-600 mb-6">
-          You have a saved progress. Would you like to continue from where you left off?
+          저장된 진행 상태가 있습니다. 마지막으로 보던 곳에서 이어서 진행하시겠습니까?
         </p>
         <div className="flex gap-3">
           <Button onClick={handleContinue} className="flex-1">
-            Continue
+            이어하기
           </Button>
           <Button variant="secondary" onClick={handleStartFresh} className="flex-1">
-            Start Fresh
+            새로 시작
           </Button>
         </div>
       </Modal>

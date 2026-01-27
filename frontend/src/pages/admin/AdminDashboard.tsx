@@ -88,6 +88,9 @@ export const AdminDashboard: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [iconPickerStoryId, setIconPickerStoryId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const dragNodeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -179,6 +182,52 @@ export const AdminDashboard: React.FC = () => {
       setIconPickerStoryId(null);
     } catch (error) {
       console.error('Failed to update story icon:', error);
+    }
+  };
+
+  const startEditingStory = (story: Story) => {
+    setEditingStoryId(story.id);
+    setEditName(story.name);
+    setEditDescription(story.description || '');
+  };
+
+  const cancelEditingStory = () => {
+    setEditingStoryId(null);
+    setEditName('');
+    setEditDescription('');
+  };
+
+  const saveStoryEdit = async (storyId: string) => {
+    try {
+      await api.put(`/admin/stories/${storyId}`, {
+        name: editName,
+        description: editDescription,
+      });
+      setStories((prev) =>
+        prev.map((s) =>
+          s.id === storyId ? { ...s, name: editName, description: editDescription } : s
+        )
+      );
+      cancelEditingStory();
+    } catch (error) {
+      console.error('Failed to update story:', error);
+      alert('Failed to update story. Please try again.');
+    }
+  };
+
+  const toggleStoryActive = async (storyId: string, currentStatus: boolean) => {
+    try {
+      await api.put(`/admin/stories/${storyId}`, {
+        is_active: !currentStatus,
+      });
+      setStories((prev) =>
+        prev.map((s) =>
+          s.id === storyId ? { ...s, is_active: !currentStatus } : s
+        )
+      );
+    } catch (error) {
+      console.error('Failed to toggle story status:', error);
+      alert('Failed to update story status. Please try again.');
     }
   };
 
@@ -348,7 +397,7 @@ export const AdminDashboard: React.FC = () => {
             )}
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            Drag and drop to reorder stories. The order will be reflected on the public story selection page.
+            드래그 앤 드롭으로 스토리 순서를 변경할 수 있습니다. 활성화된 스토리만 공개 페이지에 표시됩니다.
           </p>
           <div className="space-y-3">
             {stories.map((story, index) => {
@@ -361,11 +410,13 @@ export const AdminDashboard: React.FC = () => {
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
-                  className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-move transition-all ${
+                  className={`flex items-center justify-between p-4 rounded-lg cursor-move transition-all ${
                     dragOverIndex === index && draggedIndex !== index
                       ? 'border-2 border-primary-500 border-dashed bg-primary-50'
                       : 'border-2 border-transparent'
-                  } ${draggedIndex === index ? 'opacity-50' : ''}`}
+                  } ${draggedIndex === index ? 'opacity-50' : ''} ${
+                    story.is_active ? 'bg-gray-50' : 'bg-gray-100 opacity-60'
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <GripVertical className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -418,26 +469,80 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{story.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {story.description || 'No description'}
-                      </p>
+                    <div className="flex-1">
+                      {editingStoryId === story.id ? (
+                        <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500"
+                            placeholder="Story name"
+                            autoFocus
+                          />
+                          <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 resize-none"
+                            placeholder="Story description"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveStoryEdit(story.id)}>
+                              저장
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={cancelEditingStory}>
+                              취소
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-gray-900">{story.name}</h3>
+                            {!story.is_active && (
+                              <span className="px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                                비공개
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {story.description || 'No description'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStoryActive(story.id, story.is_active);
+                      }}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                         story.is_active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
+                      title={story.is_active ? 'Click to deactivate' : 'Click to activate'}
                     >
-                      {story.is_active ? 'Active' : 'Inactive'}
-                    </span>
+                      {story.is_active ? '✓ 활성' : '○ 비활성'}
+                    </button>
+                    {editingStoryId !== story.id && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditingStory(story);
+                        }}
+                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Edit title and description"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                    )}
                     <Link to={`/admin/stories/${story.id}`}>
                       <Button variant="secondary" size="sm">
-                        Edit
+                        Editor
                       </Button>
                     </Link>
                     <div className="relative">

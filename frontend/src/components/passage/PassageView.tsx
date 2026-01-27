@@ -123,7 +123,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           <h1 className="text-3xl font-bold text-gray-900">{passage.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          {canEdit && !isEditing && (
+          {canEdit && !isEditing && passage.passage_type !== 'branch' && (
             <button
               onClick={() => setIsEditing(true)}
               className="p-2 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
@@ -131,6 +131,11 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
             >
               <Pencil className="w-5 h-5" />
             </button>
+          )}
+          {canEdit && passage.passage_type === 'branch' && (
+            <div className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-lg">
+              Branch 노드는 에디터에서만 편집 가능
+            </div>
           )}
           {isAuthenticated && (
             <button

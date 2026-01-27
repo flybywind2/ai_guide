@@ -266,31 +266,15 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
     }
   };
 
-const onNodeClick = useCallback(async (_: React.MouseEvent, node: Node) => {
-  setSelectedPassageId(null);
+const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
   setSelectedEdge(null);
-  
-  const data = await fetchStory();
-  
-  if (data) {
-    setTimeout(() => {
-      setSelectedPassageId(node.id);
-    }, 50);
-  }
-}, [fetchStory]);
+  setSelectedPassageId(node.id);
+}, []);
 
-const onNodeDoubleClick = useCallback(async (_: React.MouseEvent, node: Node) => {
-  setSelectedPassageId(null);
+const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
   setSelectedEdge(null);
-  
-  const data = await fetchStory();
-  
-  if (data) {
-    setTimeout(() => {
-      setSelectedPassageId(node.id);
-    }, 50);
-  }
-}, [fetchStory]);
+  setSelectedPassageId(node.id);
+}, []);
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     if (!edge.id.startsWith('content-')) {
       setSelectedEdge(edge);
@@ -744,16 +728,23 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     autoSaveTimerRef.current = setTimeout(async () => {
       try {
         const fullContent = serializeBranchData(rawContent, { choices: branchChoices });
-        
+
         await api.put(`/admin/passages/${passage.id}`, {
           name,
           content: fullContent,
           passage_type: passageType,
         });
-        
+
         // 저장 후 초기값 업데이트
         initialBranchChoicesRef.current = JSON.stringify(branchChoices);
-        
+
+        // allPassages 업데이트 (다른 노드 갔다가 돌아와도 최신 데이터 유지)
+        setAllPassages(prev => prev.map(p =>
+          p.id === passage.id
+            ? { ...p, name, content: fullContent, passage_type: passageType }
+            : p
+        ));
+
         console.log('✅ Branch choices auto-saved');
       } catch (error) {
         console.error('Failed to auto-save branch choices:', error);
