@@ -43,6 +43,31 @@ interface InlinePassageEditorProps {
   onCancel: () => void;
 }
 
+// 클래스명을 컴포넌트 외부에 상수로 정의
+const EDITOR_CLASS_NAME = "prose prose-sm max-w-none p-4 min-h-[200px] focus:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:my-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h2]:my-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-gray-300 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:bg-gray-100 [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:rounded [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:text-white [&_.ProseMirror_pre]:p-4 [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_hr]:my-4 [&_.ProseMirror_hr]:border-gray-300 [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:my-4 [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-gray-300 [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-gray-300 [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-gray-100 [&_.ProseMirror_th]:font-semibold [&_.ProseMirror_.selectedCell]:bg-blue-100";
+
+// ToolbarButton을 컴포넌트 외부로 이동
+const ToolbarButton: React.FC<{
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  title: string;
+  danger?: boolean;
+}> = ({ onClick, isActive, disabled, children, title, danger }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`p-1.5 rounded hover:bg-gray-100 transition-colors ${
+      isActive ? 'bg-primary-100 text-primary-700' : danger ? 'text-red-500' : 'text-gray-600'
+    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+  >
+    {children}
+  </button>
+);
+
 export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
   passageId,
   initialContent,
@@ -94,6 +119,8 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
       }),
     ],
     content: initialContent,
+    editable: true,
+    autofocus: 'end',
     editorProps: {
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items;
@@ -214,28 +241,8 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
 
   if (!editor) return null;
 
-  const ToolbarButton: React.FC<{
-    onClick: () => void;
-    isActive?: boolean;
-    disabled?: boolean;
-    children: React.ReactNode;
-    title: string;
-    danger?: boolean;
-  }> = ({ onClick, isActive, disabled, children, title, danger }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={`p-1.5 rounded hover:bg-gray-100 transition-colors ${
-        isActive ? 'bg-primary-100 text-primary-700' : danger ? 'text-red-500' : 'text-gray-600'
-      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {children}
-    </button>
-  );
-
-  const EditorToolbar = () => (
+  // 툴바 렌더링 함수 (JSX 반환, 컴포넌트 아님)
+  const renderToolbar = () => (
     <div className="bg-gray-50 border-b border-gray-200 p-2 flex flex-wrap gap-0.5 items-center">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -422,13 +429,6 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
     </div>
   );
 
-  const EditorContent_ = () => (
-    <EditorContent
-      editor={editor}
-      className="prose prose-sm max-w-none p-4 min-h-[200px] focus:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:my-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h2]:my-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-gray-300 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:bg-gray-100 [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:rounded [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:text-white [&_.ProseMirror_pre]:p-4 [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_hr]:my-4 [&_.ProseMirror_hr]:border-gray-300 [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:my-4 [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-gray-300 [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-gray-300 [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-gray-100 [&_.ProseMirror_th]:font-semibold [&_.ProseMirror_.selectedCell]:bg-blue-100"
-    />
-  );
-
   // Maximized view
   if (isMaximized) {
     return (
@@ -450,12 +450,12 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
         </div>
 
         {/* Toolbar */}
-        <EditorToolbar />
+        {renderToolbar()}
 
         {/* Editor */}
         <div className="flex-1 overflow-auto">
           <div className="max-w-4xl mx-auto">
-            <EditorContent_ />
+            <EditorContent editor={editor} className={EDITOR_CLASS_NAME} />
           </div>
         </div>
 
@@ -514,10 +514,10 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
       </div>
 
       {/* Toolbar */}
-      <EditorToolbar />
+      {renderToolbar()}
 
       {/* Editor Content */}
-      <EditorContent_ />
+      <EditorContent editor={editor} className={EDITOR_CLASS_NAME} />
     </div>
   );
 };
