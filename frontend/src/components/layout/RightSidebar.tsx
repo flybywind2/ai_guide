@@ -52,17 +52,17 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
       <div className="bg-gray-50 rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">
-            {feedback.is_anonymous ? 'Anonymous' : feedback.user_name || 'User'}
+            {feedback.is_anonymous ? '익명' : feedback.user_name || '사용자'}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">
-              {new Date(feedback.created_at).toLocaleDateString()}
+              {new Date(feedback.created_at).toLocaleDateString('ko-KR')}
             </span>
             {canDelete && (
               <button
                 onClick={() => onDelete(feedback.id)}
                 className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                title="Delete"
+                title="삭제"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -78,7 +78,7 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
             className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700"
           >
             <Reply className="w-3 h-3" />
-            Reply
+            답글
           </button>
         )}
 
@@ -88,7 +88,7 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
             <textarea
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Write a reply..."
+              placeholder="답글을 입력하세요..."
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:border-primary-500"
               rows={2}
             />
@@ -100,7 +100,7 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
                   onChange={(e) => setReplyAnonymous(e.target.checked)}
                   className="rounded border-gray-300 w-3 h-3"
                 />
-                Anonymous
+                익명
               </label>
               <div className="flex gap-2">
                 <button
@@ -108,14 +108,14 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
                   onClick={() => setShowReplyForm(false)}
                   className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
                 >
-                  Cancel
+                  취소
                 </button>
                 <button
                   type="submit"
                   disabled={!replyContent.trim() || isSubmitting}
                   className="px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
                 >
-                  Reply
+                  답글
                 </button>
               </div>
             </div>
@@ -201,14 +201,14 @@ export const RightSidebar: React.FC = () => {
   };
 
   const handleDelete = async (feedbackId: string) => {
-    if (!confirm('Are you sure you want to delete this feedback?')) return;
+    if (!confirm('이 피드백을 삭제하시겠습니까?')) return;
     await api.delete(`/feedback/${feedbackId}`);
     fetchFeedbacks();
   };
 
   if (rightSidebarCollapsed) {
     return (
-      <aside className="w-[48px] bg-white border-l border-gray-200 flex flex-col">
+      <aside className="w-[48px] bg-white border-l border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
         <button
           onClick={toggleRightSidebar}
           className="p-3 hover:bg-gray-100 transition-colors"
@@ -220,11 +220,11 @@ export const RightSidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-[320px] bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+    <aside className="w-[320px] bg-white border-l border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gray-600" />
-          <span className="font-semibold text-gray-900">Feedback</span>
+          <span className="font-semibold text-gray-900">피드백</span>
           {feedbacks.length > 0 && (
             <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
               {feedbacks.length}
@@ -239,7 +239,7 @@ export const RightSidebar: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-[200px]">
         {feedbacks.length > 0 ? (
           feedbacks.map((feedback) => (
             <FeedbackItem
@@ -254,19 +254,19 @@ export const RightSidebar: React.FC = () => {
           ))
         ) : (
           <p className="text-sm text-gray-400 text-center py-4">
-            No feedback yet. Be the first to share!
+            아직 피드백이 없습니다. 첫 피드백을 남겨보세요!
           </p>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
+      <form onSubmit={handleSubmit} className="absolute bottom-[72px] left-0 right-0 p-4 border-t border-gray-200 bg-white">
         <textarea
           value={newFeedback}
           onChange={(e) => setNewFeedback(e.target.value)}
           placeholder={
             isAuthenticated
-              ? 'Share your feedback...'
-              : 'Login to share feedback'
+              ? '피드백을 입력하세요...'
+              : '로그인 후 피드백을 남길 수 있습니다'
           }
           disabled={!isAuthenticated}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-primary-500"
@@ -280,7 +280,7 @@ export const RightSidebar: React.FC = () => {
               onChange={(e) => setIsAnonymous(e.target.checked)}
               className="rounded border-gray-300"
             />
-            Anonymous
+            익명
           </label>
           <Button
             type="submit"
@@ -288,7 +288,7 @@ export const RightSidebar: React.FC = () => {
             disabled={!isAuthenticated || !newFeedback.trim() || isLoading}
           >
             <Send className="w-4 h-4 mr-1" />
-            Send
+            전송
           </Button>
         </div>
       </form>

@@ -26,7 +26,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
 
   if (leftSidebarCollapsed) {
     return (
-      <aside className="w-[60px] bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-[60px] bg-white border-r border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
         <button
           onClick={toggleLeftSidebar}
           className="p-4 hover:bg-gray-100 transition-colors"
@@ -38,9 +38,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   }
 
   return (
-    <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <span className="font-semibold text-gray-900">Navigation</span>
+    <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col overflow-hidden sticky top-16 h-[calc(100vh-64px)]">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        <span className="font-semibold text-gray-900">내비게이션</span>
         <button
           onClick={toggleLeftSidebar}
           className="p-1 rounded hover:bg-gray-100 transition-colors"
@@ -54,7 +54,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <Bookmark className="w-4 h-4" />
-            <span>Bookmarks</span>
+            <span>북마크</span>
           </div>
           {filteredBookmarks.length > 0 ? (
             <ul className="space-y-1">
@@ -68,13 +68,13 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                         : 'hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {bookmark.passage_name || 'Untitled'}
+                    {bookmark.passage_name || '제목 없음'}
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-400">No bookmarks yet</p>
+            <p className="text-sm text-gray-400">아직 북마크가 없습니다</p>
           )}
         </div>
 
@@ -82,7 +82,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <History className="w-4 h-4" />
-            <span>History</span>
+            <span>히스토리</span>
           </div>
           {navigationHistoryWithNames.length > 0 ? (
             <ul className="space-y-1">
@@ -97,13 +97,13 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     }`}
                   >
                     <span className="text-gray-400 mr-2">{index + 1}.</span>
-                    {entry.name || 'Untitled'}
+                    {entry.name || '제목 없음'}
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-400">No history yet</p>
+            <p className="text-sm text-gray-400">아직 히스토리가 없습니다</p>
           )}
         </div>
 
@@ -111,12 +111,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
         <div className="p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <List className="w-4 h-4" />
-            <span>Table of Contents</span>
+            <span>목차</span>
           </div>
           {currentStory ? (
             <p className="text-sm text-gray-700">{currentStory.name}</p>
           ) : (
-            <p className="text-sm text-gray-400">Select a story to begin</p>
+            <p className="text-sm text-gray-400">스토리를 선택해주세요</p>
           )}
         </div>
       </div>

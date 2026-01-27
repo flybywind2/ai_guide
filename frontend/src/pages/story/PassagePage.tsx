@@ -53,10 +53,10 @@ export const PassagePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="pt-16 pb-[72px] flex">
+      <div className="pt-16 flex min-h-screen">
         <LeftSidebar />
 
-        <main className="flex-1 flex flex-col min-w-0 relative">
+        <main className="flex-1 flex flex-col min-w-0 relative pb-[72px]">
           <Minimap />
 
           {/* Story Map Button */}
