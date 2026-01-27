@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Bookmark, List, History } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useStoryStore } from '../../stores/storyStore';
@@ -9,6 +10,7 @@ interface LeftSidebarProps {
 }
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
+  const navigate = useNavigate();
   const { leftSidebarCollapsed, toggleLeftSidebar } = useUIStore();
   const {
     bookmarks,
@@ -18,7 +20,14 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
     navigationHistoryWithNames,
     currentHistoryIndex,
     navigateToHistoryIndex,
+    stories,
+    fetchStories,
+    startStory,
   } = useStoryStore();
+
+  useEffect(() => {
+    fetchStories();
+  }, [fetchStories]);
 
   const filteredBookmarks = bookmarks.filter(
     (b) => b.story_id === currentStory?.id
@@ -107,16 +116,40 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
           )}
         </div>
 
-        {/* Table of Contents */}
+        {/* Stories */}
         <div className="p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <List className="w-4 h-4" />
-            <span>목차</span>
+            <span>스토리</span>
           </div>
-          {currentStory ? (
-            <p className="text-sm text-gray-700">{currentStory.name}</p>
+          {stories.length > 0 ? (
+            <ul className="space-y-2">
+              {stories.map((story) => (
+                <li key={story.id}>
+                  <button
+                    onClick={async () => {
+                      await startStory(story.id);
+                      // Navigate to /passage - PassagePage will load from currentPassage state
+                      navigate('/passage');
+                    }}
+                    className={`w-full text-left px-3 py-3 rounded-lg transition-colors ${
+                      currentStory?.id === story.id
+                        ? 'bg-primary-100 text-primary-700 font-medium'
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{story.name}</div>
+                    {story.description && (
+                      <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        {story.description}
+                      </div>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="text-sm text-gray-400">스토리를 선택해주세요</p>
+            <p className="text-sm text-gray-400">사용 가능한 스토리가 없습니다</p>
           )}
         </div>
       </div>

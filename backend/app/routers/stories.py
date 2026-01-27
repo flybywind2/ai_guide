@@ -38,32 +38,8 @@ async def get_stories(db: AsyncSession = Depends(get_db)):
         for s in stories
     ]
 
-@router.get("/{story_id}", response_model=StoryResponse)
-async def get_story(story_id: str, db: AsyncSession = Depends(get_db)):
-    """Get story by ID"""
-    result = await db.execute(select(Story).where(Story.id == story_id))
-    story = result.scalar_one_or_none()
-
-    if not story:
-        raise HTTPException(status_code=404, detail="Story not found")
-
-    return StoryResponse(
-        id=story.id,
-        name=story.name,
-        description=story.description,
-        start_passage_id=story.start_passage_id,
-        is_active=bool(story.is_active),
-        zoom=story.zoom,
-        tags=json.loads(story.tags) if story.tags else [],
-        sort_order=story.sort_order,
-        icon=story.icon or "book-open",
-        created_by=story.created_by,
-        created_at=story.created_at,
-        updated_at=story.updated_at
-    )
-
-@router.get("/{story_id}/full", response_model=StoryWithPassages)
-async def get_story_full(story_id: str, db: AsyncSession = Depends(get_db)):
+@router.get("/structure/{story_id}", response_model=StoryWithPassages)
+async def get_story_structure(story_id: str, db: AsyncSession = Depends(get_db)):
     """Get full story structure with passages and links (public)"""
     result = await db.execute(select(Story).where(Story.id == story_id))
     story = result.scalar_one_or_none()
@@ -121,6 +97,30 @@ async def get_story_full(story_id: str, db: AsyncSession = Depends(get_db)):
             )
             for l in links
         ]
+    )
+
+@router.get("/{story_id}", response_model=StoryResponse)
+async def get_story(story_id: str, db: AsyncSession = Depends(get_db)):
+    """Get story by ID"""
+    result = await db.execute(select(Story).where(Story.id == story_id))
+    story = result.scalar_one_or_none()
+
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    return StoryResponse(
+        id=story.id,
+        name=story.name,
+        description=story.description,
+        start_passage_id=story.start_passage_id,
+        is_active=bool(story.is_active),
+        zoom=story.zoom,
+        tags=json.loads(story.tags) if story.tags else [],
+        sort_order=story.sort_order,
+        icon=story.icon or "book-open",
+        created_by=story.created_by,
+        created_at=story.created_at,
+        updated_at=story.updated_at
     )
 
 @router.get("/{story_id}/start", response_model=PassageWithContext)

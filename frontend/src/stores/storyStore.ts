@@ -118,7 +118,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
   fetchStoryStructure: async (storyId: string) => {
     try {
-      const response = await api.get(`/stories/${storyId}/full`);
+      const response = await api.get(`/stories/structure/${storyId}`);
       const structure = response.data as StoryWithPassages;
       const mainPath = computeMainPath(structure);
       set({ storyStructure: structure, mainPath });
@@ -131,7 +131,6 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ isLoading: true });
     try {
       await get().fetchStory(storyId);
-      await get().fetchStoryStructure(storyId);
       const response = await api.get(`/stories/${storyId}/start`);
       const passage = response.data.passage;
       set({
@@ -159,7 +158,6 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       const currentStory = get().currentStory;
       if (!currentStory || currentStory.id !== storyId) {
         await get().fetchStory(storyId);
-        await get().fetchStoryStructure(storyId);
       }
 
       if (updateHistory) {

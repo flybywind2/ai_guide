@@ -51,36 +51,52 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
         </Button>
 
         <div className="flex items-center gap-3">
-          {is_end ? (
-            <div className="text-center">
-              <p className="text-gray-600 mb-2">You've reached the end of this path.</p>
-              <Button variant="secondary" onClick={handleChangePath}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Start Over
-              </Button>
-            </div>
+          {passage.passage_type === 'branch' ? (
+            // For branch passages, only show end message if applicable
+            is_end && (
+              <div className="text-center">
+                <p className="text-gray-600 mb-2">You've reached the end of this path.</p>
+                <Button variant="secondary" onClick={handleChangePath}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Start Over
+                </Button>
+              </div>
+            )
           ) : (
+            // For non-branch passages, show normal navigation options
             <>
-              {/* Show user selection links as choices */}
-              {userSelectionLinks.map((link) => (
-                <Button
-                  key={link.id}
-                  variant="secondary"
-                  onClick={() => handleLinkClick(link.id)}
-                >
-                  {link.name || 'Choice'}
-                  <ChevronRight className="w-5 h-5 ml-1" />
-                </Button>
-              ))}
-              {/* Show only one Next button for automatic links */}
-              {primaryAutoLink && (
-                <Button
-                  variant="primary"
-                  onClick={() => handleLinkClick(primaryAutoLink.id)}
-                >
-                  {primaryAutoLink.name || 'Next'}
-                  <ChevronRight className="w-5 h-5 ml-1" />
-                </Button>
+              {is_end ? (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-2">You've reached the end of this path.</p>
+                  <Button variant="secondary" onClick={handleChangePath}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Start Over
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Show user selection links as choices */}
+                  {userSelectionLinks.map((link) => (
+                    <Button
+                      key={link.id}
+                      variant="secondary"
+                      onClick={() => handleLinkClick(link.id)}
+                    >
+                      {link.name || 'Choice'}
+                      <ChevronRight className="w-5 h-5 ml-1" />
+                    </Button>
+                  ))}
+                  {/* Show only one Next button for automatic links */}
+                  {primaryAutoLink && (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleLinkClick(primaryAutoLink.id)}
+                    >
+                      {primaryAutoLink.name || 'Next'}
+                      <ChevronRight className="w-5 h-5 ml-1" />
+                    </Button>
+                  )}
+                </>
               )}
             </>
           )}
