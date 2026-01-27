@@ -5,5 +5,5 @@ from app.schemas.story import (
     LinkCreate, LinkUpdate, LinkResponse,
     NavigationRequest
 )
-from app.schemas.feedback import FeedbackCreate, FeedbackResponse
+from app.schemas.feedback import FeedbackCreate, FeedbackResponse, FeedbackWithPassageInfo
 from app.schemas.bookmark import BookmarkResponse

@@ -13,6 +13,7 @@ from app.models.passage import Passage
 from app.models.link import Link
 from app.models.user import User
 from app.models.analytics import VisitLog, Image
+from app.models.feedback import Feedback
 from app.schemas.story import (
     StoryCreate, StoryUpdate, StoryResponse, StoryWithPassages,
     PassageCreate, PassageUpdate, PassageResponse,
@@ -526,11 +527,16 @@ async def get_stats_overview(
     result = await db.execute(select(func.count(VisitLog.id)))
     total_visits = result.scalar()
 
+    # Total feedbacks
+    result = await db.execute(select(func.count(Feedback.id)))
+    total_feedbacks = result.scalar()
+
     return {
         "total_users": total_users,
         "total_stories": total_stories,
         "total_passages": total_passages,
-        "total_visits": total_visits
+        "total_visits": total_visits,
+        "total_feedbacks": total_feedbacks
     }
 
 @router.get("/stats/passages")

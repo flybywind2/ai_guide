@@ -22,4 +22,24 @@ class FeedbackResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class FeedbackWithPassageInfo(BaseModel):
+    id: str
+    user_id: Optional[str]
+    user_name: Optional[str] = None
+    passage_id: Optional[str]
+    passage_name: Optional[str] = None
+    story_id: Optional[str] = None
+    story_name: Optional[str] = None
+    content: str
+    is_anonymous: bool
+    parent_id: Optional[str]
+    created_at: str
+    updated_at: str
+    reply_count: int = 0
+    replies: List["FeedbackResponse"] = []
+
+    class Config:
+        from_attributes = True
+
 FeedbackResponse.model_rebuild()
+FeedbackWithPassageInfo.model_rebuild()
