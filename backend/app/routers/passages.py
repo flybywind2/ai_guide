@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
+import json
 from app.database import get_db
 from app.models.passage import Passage
 from app.models.story import Story
@@ -56,7 +57,21 @@ async def resolve_passage_reference(
     if not passage:
         raise HTTPException(status_code=404, detail="Passage not found")
 
-    return passage
+    return PassageResponse(
+        id=passage.id,
+        story_id=passage.story_id,
+        passage_number=passage.passage_number,
+        name=passage.name,
+        content=passage.content or "",
+        passage_type=passage.passage_type,
+        tags=json.loads(passage.tags) if passage.tags else [],
+        position_x=passage.position_x,
+        position_y=passage.position_y,
+        width=passage.width,
+        height=passage.height,
+        created_at=passage.created_at,
+        updated_at=passage.updated_at
+    )
 
 @router.get("/{passage_id}", response_model=PassageWithContext)
 async def get_passage(

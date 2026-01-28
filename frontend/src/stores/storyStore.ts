@@ -187,14 +187,15 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     try {
       // Resolve passage number to passage ID using resolve API
       const reference = `#${passageNumber.toString().padStart(6, '0')}`;
-      const response = await api.get(`/passages/resolve`, {
+      const resolveResponse = await api.get(`/passages/resolve`, {
         params: {
           story_id: storyId,
           reference: reference,
         },
       });
 
-      const passage = response.data.passage;
+      // FIX: response.data is directly the passage (PassageResponse)
+      const passage = resolveResponse.data;
 
       // Load story if not already loaded or different
       const currentStory = get().currentStory;
@@ -202,15 +203,14 @@ export const useStoryStore = create<StoryState>((set, get) => ({
         await get().fetchStory(storyId);
       }
 
-      // Set current passage without updating history (direct URL access)
-      set({
-        currentPassage: response.data,
-        previousPassageId: null,
-        navigationHistory: [passage.id],
-        navigationHistoryWithNames: [{ id: passage.id, name: passage.name }],
-        currentHistoryIndex: 0,
-      });
-      get().saveLastVisit();
+      // Now load the full passage with context using the passage ID
+      // loadPassageById already handles PassageWithContext properly
+      await get().loadPassageById(passage.id, false);
+
+    } catch (error) {
+      console.error('Error loading passage by number:', error);
+      set({ isLoading: false });
+      throw error;
     } finally {
       set({ isLoading: false });
     }
