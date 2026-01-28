@@ -1,5 +1,12 @@
 // Utility functions for branch passage data
 
+/**
+ * Generate a unique ID (cross-browser compatible)
+ */
+export function generateUniqueId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
 export interface BranchChoice {
   id: string;
   button: string;
@@ -37,7 +44,7 @@ export function parseBranchData(content: string): { content: string; branchData:
     // id 없는 기존 데이터에 id 추가 (마이그레이션)
     branchData.choices = branchData.choices.map((choice) => ({
       ...choice,
-      id: choice.id || crypto.randomUUID(),
+      id: choice.id || generateUniqueId(),
     }));
     
     return { content: cleanContent, branchData };
@@ -67,8 +74,8 @@ export function serializeBranchData(content: string, branchData: BranchData | nu
 export function createDefaultBranchData(): BranchData {
   return {
     choices: [
-      { id: crypto.randomUUID(), button: 'Option A', description: 'Description for option A' },
-      { id: crypto.randomUUID(), button: 'Option B', description: 'Description for option B' },
+      { id: generateUniqueId(), button: 'Option A', description: 'Description for option A' },
+      { id: generateUniqueId(), button: 'Option B', description: 'Description for option B' },
     ],
   };
 }

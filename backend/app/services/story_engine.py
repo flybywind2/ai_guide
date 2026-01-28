@@ -103,6 +103,7 @@ class StoryEngine:
         passage_response = PassageResponse(
             id=passage.id,
             story_id=passage.story_id,
+            passage_number=passage.passage_number,
             name=passage.name,
             content=passage.content or "",
             passage_type=passage.passage_type,

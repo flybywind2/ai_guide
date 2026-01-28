@@ -18,13 +18,13 @@ import '@xyflow/react/dist/style.css';
 import api from '../../services/api';
 import type { StoryWithPassages, Passage } from '../../types';
 import { Button } from '../common';
-import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2, HelpCircle } from 'lucide-react';
+import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2, HelpCircle, Download, Upload } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { PassageCodeEditor } from './PassageCodeEditor';
 import { MacroGuideModal } from './MacroGuideModal';
 import { BranchNode } from './BranchNode';
 import { extractVariables, extractPassageRefs, PassageRef } from './twine-syntax';
-import { parseBranchData, serializeBranchData, createDefaultBranchData, BranchChoice } from '../../utils/branch-utils';
+import { parseBranchData, serializeBranchData, createDefaultBranchData, generateUniqueId, BranchChoice } from '../../utils/branch-utils';
 
 const nodeTypes = {
   branch: BranchNode,
@@ -83,7 +83,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       setStoryVariables(allVars);
 
       const newNodes: Node[] = data.passages.map((p) => {
-        const isBranch = p.passage_type === 'branch';
+        const isBranch = p.passage_type === 'branch' || p.passage_type === 'start';
         return {
           id: p.id,
           type: isBranch ? 'branch' : undefined,
@@ -107,23 +107,61 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
       const passageMap = new Map(data.passages.map(p => [p.id, p]));
 
+      // Group links by source to determine priority
+      const linksBySource = new Map<string, typeof data.links>();
+      data.links.forEach(link => {
+        const sourceLinks = linksBySource.get(link.source_passage_id) || [];
+        sourceLinks.push(link);
+        linksBySource.set(link.source_passage_id, sourceLinks);
+      });
+
+      // Sort each group by link_order
+      linksBySource.forEach((links, sourceId) => {
+        links.sort((a, b) => a.link_order - b.link_order);
+      });
+
       const newEdges: Edge[] = data.links.map((l) => {
         const sourcePassage = passageMap.get(l.source_passage_id);
-        const isBranchSource = sourcePassage?.passage_type === 'branch';
+        const isBranchSource = sourcePassage?.passage_type === 'branch' || sourcePassage?.passage_type === 'start';
+        const isStartSource = sourcePassage?.passage_type === 'start';
         const sourceHandle = isBranchSource ? `choice-${l.link_order}` : undefined;
+
+        // Determine priority for non-branch links
+        const sourceLinks = linksBySource.get(l.source_passage_id) || [];
+        const hasPriority = !isBranchSource && sourceLinks.length > 1;
+        const priorityNumber = hasPriority ? sourceLinks.findIndex(link => link.id === l.id) + 1 : null;
+
+        // Create label with priority
+        let edgeLabel = '';
+        if (isBranchSource) {
+          edgeLabel = `${l.link_order + 1}`;
+        } else if (hasPriority && priorityNumber) {
+          edgeLabel = l.name ? `${priorityNumber}. ${l.name}` : `${priorityNumber}`;
+        } else {
+          edgeLabel = l.name || '';
+        }
 
         return {
           id: l.id,
           source: l.source_passage_id,
           target: l.target_passage_id,
           sourceHandle,
-          label: isBranchSource ? `${l.link_order + 1}` : (l.name || ''),
+          label: edgeLabel,
           type: 'smoothstep',
           animated: l.condition_type !== 'always',
-          style: isBranchSource ? { stroke: '#F59E0B', strokeWidth: 2 } : undefined,
+          markerEnd: {
+            type: 'arrowclosed' as const,
+            width: 20,
+            height: 20,
+            color: isBranchSource ? (isStartSource ? '#10B981' : '#F59E0B') : '#6B7280',
+          },
+          style: isBranchSource
+            ? { stroke: isStartSource ? '#10B981' : '#F59E0B', strokeWidth: 2 }
+            : { strokeWidth: hasPriority ? 2 : 1.5 },
           data: {
             conditionType: l.condition_type,
             conditionValue: l.condition_value,
+            priority: priorityNumber,
           },
         };
       });
@@ -153,6 +191,12 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
                 type: 'smoothstep',
                 style: { strokeDasharray: '5,5', stroke: '#9CA3AF' },
                 animated: false,
+                markerEnd: {
+                  type: 'arrowclosed' as const,
+                  width: 15,
+                  height: 15,
+                  color: '#9CA3AF',
+                },
               });
             }
           }
@@ -176,12 +220,24 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       try {
         let linkOrder = 0;
         let isBranchLink = false;
+
         if (connection.sourceHandle?.startsWith('choice-')) {
           linkOrder = parseInt(connection.sourceHandle.replace('choice-', ''), 10);
           isBranchLink = true;
+        } else {
+          // For non-branch links, find the max link_order from the same source and add 1
+          const story = await fetchStory();
+          if (story) {
+            const sourceLinks = story.links.filter(l => l.source_passage_id === connection.source);
+            const maxOrder = sourceLinks.reduce((max, link) => Math.max(max, link.link_order), -1);
+            linkOrder = maxOrder + 1;
+          }
         }
 
-        const response = await api.post('/admin/links', {
+        const sourcePassage = allPassages.find(p => p.id === connection.source);
+        const isStartSource = sourcePassage?.passage_type === 'start';
+
+        await api.post('/admin/links', {
           story_id: storyId,
           source_passage_id: connection.source,
           target_passage_id: connection.target,
@@ -189,23 +245,13 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
           link_order: linkOrder,
         });
 
-        setEdges((eds) =>
-          addEdge(
-            {
-              ...connection,
-              id: response.data.id,
-              type: 'smoothstep',
-              label: isBranchLink ? `${linkOrder + 1}` : '',
-              style: isBranchLink ? { stroke: '#F59E0B', strokeWidth: 2 } : undefined,
-            },
-            eds
-          )
-        );
+        // Refresh the entire story to update priorities
+        await fetchStory();
       } catch (error) {
         console.error('Failed to create link:', error);
       }
     },
-    [storyId, setEdges]
+    [storyId, allPassages, fetchStory]
   );
 
   const handleNodesChange = useCallback(
@@ -361,6 +407,112 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
     }
   }, [setEdges]);
 
+  const updateLinkOrder = useCallback(async (edgeId: string, newOrder: number) => {
+    try {
+      await api.put(`/admin/links/${edgeId}`, {
+        link_order: newOrder,
+      });
+      // Refresh the story to update all priorities
+      await fetchStory();
+    } catch (error) {
+      console.error('Failed to update link order:', error);
+    }
+  }, [fetchStory]);
+
+  const exportPassagesCSV = useCallback(async () => {
+    try {
+      const response = await api.get(`/admin/stories/${storyId}/export/passages`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `passages_${storyId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export passages:', error);
+      alert('Failed to export passages');
+    }
+  }, [storyId]);
+
+  const exportLinksCSV = useCallback(async () => {
+    try {
+      const response = await api.get(`/admin/stories/${storyId}/export/links`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `links_${storyId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export links:', error);
+      alert('Failed to export links');
+    }
+  }, [storyId]);
+
+  const importPassagesCSV = useCallback(async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/admin/stories/${storyId}/import/passages`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        alert(`Import complete!\nImported: ${response.data.imported}\nUpdated: ${response.data.updated}\nErrors: ${response.data.errors.length}`);
+        if (response.data.errors.length > 0) {
+          console.error('Import errors:', response.data.errors);
+        }
+        await fetchStory();
+      } catch (error) {
+        console.error('Failed to import passages:', error);
+        alert('Failed to import passages');
+      }
+    };
+    input.click();
+  }, [storyId, fetchStory]);
+
+  const importLinksCSV = useCallback(async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/admin/stories/${storyId}/import/links`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        alert(`Import complete!\nImported: ${response.data.imported}\nUpdated: ${response.data.updated}\nErrors: ${response.data.errors.length}`);
+        if (response.data.errors.length > 0) {
+          console.error('Import errors:', response.data.errors);
+        }
+        await fetchStory();
+      } catch (error) {
+        console.error('Failed to import links:', error);
+        alert('Failed to import links');
+      }
+    };
+    input.click();
+  }, [storyId, fetchStory]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdge && !selectedPassageId) {
@@ -428,6 +580,26 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
             <HelpCircle className="w-4 h-4 mr-2" />
             Macro Guide
           </Button>
+
+          {/* CSV Export/Import Buttons */}
+          <div className="flex gap-1 ml-2 border-l border-gray-300 pl-2">
+            <Button variant="secondary" onClick={exportPassagesCSV} title="Export Passages to CSV">
+              <Download className="w-4 h-4 mr-1" />
+              Passages
+            </Button>
+            <Button variant="secondary" onClick={exportLinksCSV} title="Export Links to CSV">
+              <Download className="w-4 h-4 mr-1" />
+              Links
+            </Button>
+            <Button variant="secondary" onClick={importPassagesCSV} title="Import Passages from CSV">
+              <Upload className="w-4 h-4 mr-1" />
+              Passages
+            </Button>
+            <Button variant="secondary" onClick={importLinksCSV} title="Import Links from CSV">
+              <Upload className="w-4 h-4 mr-1" />
+              Links
+            </Button>
+          </div>
         </div>
 
         <ReactFlow
@@ -599,15 +771,60 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
               </div>
             )}
 
+            {/* Link Order Control */}
+            <LinkOrderControl
+              selectedEdge={selectedEdge}
+              story={story}
+              allPassages={allPassages}
+              onUpdateOrder={updateLinkOrder}
+            />
+
             <div className="pt-4 border-t">
-              <p className="text-sm text-gray-600 mb-3">
-                <span className="font-medium">From:</span>{' '}
-                {allPassages.find((p) => p.id === selectedEdge.source)?.name || 'Unknown'}
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                <span className="font-medium">To:</span>{' '}
-                {allPassages.find((p) => p.id === selectedEdge.target)?.name || 'Unknown'}
-              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm text-gray-600">
+                  <span className="font-medium">From:</span>{' '}
+                  {allPassages.find((p) => p.id === selectedEdge.source)?.name || 'Unknown'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm text-gray-600">
+                  <span className="font-medium">To:</span>{' '}
+                  {allPassages.find((p) => p.id === selectedEdge.target)?.name || 'Unknown'}
+                </span>
+              </div>
+              {(() => {
+                // Calculate current priority dynamically from story.links
+                if (!story) return null;
+
+                const currentLink = story.links.find(l => l.id === selectedEdge.id);
+                if (!currentLink) return null;
+
+                const sourcePassage = allPassages.find(p => p.id === selectedEdge.source);
+                const isBranchSource = sourcePassage?.passage_type === 'branch' || sourcePassage?.passage_type === 'start';
+
+                // Don't show priority for branch/start sources
+                if (isBranchSource) return null;
+
+                const sourceLinks = story.links
+                  .filter(l => l.source_passage_id === selectedEdge.source)
+                  .sort((a, b) => a.link_order - b.link_order);
+
+                if (sourceLinks.length <= 1) return null; // Only show if multiple links
+
+                const priorityNumber = sourceLinks.findIndex(l => l.id === selectedEdge.id) + 1;
+
+                return (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700">
+                      <span className="font-medium">Priority:</span> {priorityNumber}
+                      {priorityNumber === 1 && ' (Primary - shown as "Next" button)'}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Multiple links from same source are numbered by priority
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             <Button
@@ -634,6 +851,73 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
   );
 };
 
+interface LinkOrderControlProps {
+  selectedEdge: Edge;
+  story: StoryWithPassages | null;
+  allPassages: Passage[];
+  onUpdateOrder: (edgeId: string, newOrder: number) => Promise<void>;
+}
+
+const LinkOrderControl: React.FC<LinkOrderControlProps> = ({
+  selectedEdge,
+  story,
+  allPassages,
+  onUpdateOrder,
+}) => {
+  const sourceLink = story?.links.find(l => l.id === selectedEdge.id);
+  const [localOrder, setLocalOrder] = useState<string>('');
+
+  // Update local order when link changes
+  useEffect(() => {
+    if (sourceLink) {
+      setLocalOrder(String(sourceLink.link_order));
+    }
+  }, [sourceLink?.link_order]);
+
+  if (!sourceLink) return null;
+
+  const sourcePassage = allPassages.find(p => p.id === selectedEdge.source);
+  const isBranchSource = sourcePassage?.passage_type === 'branch' || sourcePassage?.passage_type === 'start';
+
+  // Don't show order control for branch/start nodes (they have their own choice handles)
+  if (isBranchSource) return null;
+
+  const handleBlur = () => {
+    const newOrder = parseInt(localOrder, 10);
+    if (!isNaN(newOrder) && newOrder >= 0 && newOrder !== sourceLink.link_order) {
+      onUpdateOrder(selectedEdge.id, newOrder);
+    } else {
+      // Reset to current value if invalid
+      setLocalOrder(String(sourceLink.link_order));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1">링크 우선순위</label>
+      <input
+        type="number"
+        min="0"
+        value={localOrder}
+        onChange={(e) => setLocalOrder(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      />
+      <p className="mt-1 text-xs text-gray-500">
+        같은 출발점에서 나가는 링크가 여러 개일 때 우선순위를 결정합니다. 숫자가 작을수록 우선순위가 높습니다.
+      </p>
+    </div>
+  );
+};
+
 interface PassageEditFormProps {
   passage: Passage;
   allPassages: Passage[];
@@ -654,7 +938,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [branchChoices, setBranchChoices] = useState<BranchChoice[]>([]);
   const [passageType, setPassageType] = useState(passage.passage_type);
   const [isSaving, setIsSaving] = useState(false);
-  const [editorMode, setEditorMode] = useState<EditorMode>('code');
+  const [editorMode, setEditorMode] = useState<EditorMode>('wysiwyg');
   const [linkedPassages, setLinkedPassages] = useState<PassageRef[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
   
@@ -683,7 +967,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
     let choices: BranchChoice[] = [];
     if (branchData) {
       choices = branchData.choices;
-    } else if (passage.passage_type === 'branch') {
+    } else if (passage.passage_type === 'branch' || passage.passage_type === 'start') {
       choices = createDefaultBranchData().choices;
     }
     
@@ -715,8 +999,8 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
       console.log('⏳ 자동 저장 스킵: 초기화 중');
       return;
     }
-    
-    if (passageType !== 'branch') return;
+
+    if (passageType !== 'branch' && passageType !== 'start') return;
     if (branchChoices.length === 0) return;
     
     // 현재 값과 초기값 비교
@@ -760,7 +1044,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
 
   // 저장할 때 사용하는 전체 content
   const getFullContent = () => {
-    if (passageType === 'branch' && branchChoices.length > 0) {
+    if ((passageType === 'branch' || passageType === 'start') && branchChoices.length > 0) {
       return serializeBranchData(rawContent, { choices: branchChoices });
     }
     return rawContent;
@@ -782,7 +1066,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   }, [rawContent]);
 
   useEffect(() => {
-    if (passageType === 'branch' && branchChoices.length === 0 && isInitializedRef.current) {
+    if ((passageType === 'branch' || passageType === 'start') && branchChoices.length === 0 && isInitializedRef.current) {
       setBranchChoices(createDefaultBranchData().choices);
     }
   }, [passageType]);
@@ -995,7 +1279,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         </div>
       )}
 
-      {passageType === 'branch' && (
+      {(passageType === 'branch' || passageType === 'start') && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium text-amber-800">
@@ -1005,8 +1289,8 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
             <button
               type="button"
               onClick={() => setBranchChoices([
-                ...branchChoices, 
-                { id: crypto.randomUUID(), button: '', description: '' }
+                ...branchChoices,
+                { id: generateUniqueId(), button: '', description: '' }
               ])}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-200 text-amber-800 rounded hover:bg-amber-300 transition-colors"
             >

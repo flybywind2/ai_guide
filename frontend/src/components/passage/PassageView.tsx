@@ -123,7 +123,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           <h1 className="text-3xl font-bold text-gray-900">{passage.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          {canEdit && !isEditing && passage.passage_type !== 'branch' && (
+          {canEdit && !isEditing && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
             <button
               onClick={() => setIsEditing(true)}
               className="p-2 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
@@ -132,9 +132,9 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
               <Pencil className="w-5 h-5" />
             </button>
           )}
-          {canEdit && passage.passage_type === 'branch' && (
+          {canEdit && (passage.passage_type === 'branch' || passage.passage_type === 'start') && (
             <div className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-lg">
-              Branch 노드는 에디터에서만 편집 가능
+              {passage.passage_type === 'branch' ? 'Branch' : 'Start'} 노드는 에디터에서만 편집 가능
             </div>
           )}
           {isAuthenticated && (
@@ -169,7 +169,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
         />
       ) : (
         <TwinePassageRenderer
-          content={passage.passage_type === 'branch' ? cleanContent : (passageContent || '')}
+          content={(passage.passage_type === 'branch' || passage.passage_type === 'start') ? cleanContent : (passageContent || '')}
           state={twineState}
           onStateChange={handleStateChange}
           onNavigate={handleNavigate}
@@ -177,8 +177,8 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
         />
       )}
 
-      {/* Show branch choices for branch passages */}
-      {passage.passage_type === 'branch' && branchChoices.length > 0 && (
+      {/* Show branch choices for branch and start passages */}
+      {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length > 0 && (
         <div className="mt-8 pt-6 border-t-2 border-amber-200">
           {/* Branch header */}
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -277,8 +277,8 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
         </div>
       )}
 
-      {/* Fallback for branch passages without branch data */}
-      {passage.passage_type === 'branch' && branchChoices.length === 0 && (
+      {/* Fallback for branch/start passages without branch data */}
+      {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length === 0 && (
         <div className="mt-6 pt-6 border-t border-amber-200">
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
             <div className="p-2 bg-amber-100 rounded-full">
@@ -292,8 +292,8 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
         </div>
       )}
 
-      {/* Show inline links if available (not for branch passages - they use the nav bar) */}
-      {links.length > 0 && passage.passage_type !== 'branch' && (
+      {/* Show inline links if available (not for branch/start passages - they use the nav bar) */}
+      {links.length > 0 && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
         <div className="mt-6 pt-6 border-t border-gray-100">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Continue to:</h3>
           <div className="flex flex-wrap gap-2">

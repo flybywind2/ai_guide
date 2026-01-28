@@ -45,7 +45,11 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        hardBreak: {
+          keepMarks: true,
+        },
+      }),
       Image.configure({
         HTMLAttributes: {
           class: 'rounded-lg max-w-full',
@@ -77,7 +81,17 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     ],
     content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // Format HTML with line breaks for better readability in code mode
+      const html = editor.getHTML();
+      const formattedHTML = html
+        .replace(/></g, '>\n<')  // Add newlines between tags
+        .replace(/(<p>)/g, '\n$1')  // Add newline before paragraphs
+        .replace(/(<\/p>)/g, '$1\n')  // Add newline after paragraphs
+        .replace(/(<br>)/g, '$1\n')  // Add newline after br tags
+        .replace(/(<\/li>)/g, '$1\n')  // Add newline after list items
+        .replace(/(<\/h[1-6]>)/g, '$1\n')  // Add newline after headings
+        .trim();
+      onChange(formattedHTML);
     },
     editorProps: {
       handlePaste: (view, event) => {

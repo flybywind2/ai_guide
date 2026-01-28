@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import os
 
 from app.database import init_db
-from app.routers import auth, stories, passages, feedback, bookmarks, admin
+from app.routers import auth, stories, passages, feedback, bookmarks, admin, admin_csv
 from app.config import get_settings
 
 settings = get_settings()
@@ -42,6 +42,7 @@ app.include_router(passages.router)
 app.include_router(feedback.router)
 app.include_router(bookmarks.router)
 app.include_router(admin.router)
+app.include_router(admin_csv.router, prefix="/api/admin")
 
 @app.get("/")
 async def root():

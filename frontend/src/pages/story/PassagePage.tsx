@@ -50,11 +50,29 @@ export const PassagePage: React.FC = () => {
 
   // Update URL when current passage changes (for navigation via links)
   useEffect(() => {
-    if (currentPassage && !passageId) {
-      const currentPassageId = currentPassage.passage.id;
-      navigate(`/passage/${currentPassageId}`, { replace: true });
+    if (currentPassage && currentStory) {
+      const passage = currentPassage.passage;
+
+      // Always use passage_number format if available (migrate from UUID URLs)
+      if (passage.passage_number) {
+        const newUrl = `/passage?number=${passage.passage_number}&story=${currentStory.id}`;
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+        // Only update if URL is different (avoid infinite loops)
+        if (currentUrl !== newUrl) {
+          console.log('Updating URL to:', newUrl, 'from:', currentUrl);
+          navigate(newUrl, { replace: true });
+        }
+      } else {
+        // Fallback to ID-based URL if passage_number not available
+        const expectedUrl = `/passage/${passage.id}`;
+        if (window.location.pathname !== expectedUrl && !searchParams.get('number')) {
+          console.log('Using ID-based URL:', expectedUrl);
+          navigate(expectedUrl, { replace: true });
+        }
+      }
     }
-  }, [currentPassage?.passage.id]);
+  }, [currentPassage?.passage.id, currentPassage?.passage.passage_number, currentStory?.id, navigate, searchParams]);
 
   if (!currentPassage || !currentStory) {
     return null;

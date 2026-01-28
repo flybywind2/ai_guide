@@ -51,8 +51,8 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
         </Button>
 
         <div className="flex items-center gap-3">
-          {passage.passage_type === 'branch' ? (
-            // For branch passages, only show end message if applicable
+          {(passage.passage_type === 'branch' || passage.passage_type === 'start') ? (
+            // For branch/start passages, only show end message if applicable
             is_end && (
               <div className="text-center">
                 <p className="text-gray-600 mb-2">You've reached the end of this path.</p>
@@ -63,7 +63,7 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
               </div>
             )
           ) : (
-            // For non-branch passages, show normal navigation options
+            // For non-branch/start passages, show normal navigation options
             <>
               {is_end ? (
                 <div className="text-center">
@@ -86,16 +86,26 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
                       <ChevronRight className="w-5 h-5 ml-1" />
                     </Button>
                   ))}
-                  {/* Show only one Next button for automatic links */}
-                  {primaryAutoLink && (
-                    <Button
-                      variant="primary"
-                      onClick={() => handleLinkClick(primaryAutoLink.id)}
-                    >
-                      {primaryAutoLink.name || 'Next'}
-                      <ChevronRight className="w-5 h-5 ml-1" />
-                    </Button>
-                  )}
+                  {/* Show all automatic links with priority */}
+                  {sortedAutoLinks.map((link, index) => {
+                    const hasPriority = sortedAutoLinks.length > 1;
+                    const priorityLabel = hasPriority ? `${index + 1}. ` : '';
+                    const buttonText = link.name
+                      ? `${priorityLabel}${link.name}`
+                      : (hasPriority ? `${index + 1}. Next` : 'Next');
+
+                    return (
+                      <Button
+                        key={link.id}
+                        variant={index === 0 ? 'primary' : 'secondary'}
+                        onClick={() => handleLinkClick(link.id)}
+                        className={hasPriority ? 'relative' : ''}
+                      >
+                        {buttonText}
+                        <ChevronRight className="w-5 h-5 ml-1" />
+                      </Button>
+                    );
+                  })}
                 </>
               )}
             </>
