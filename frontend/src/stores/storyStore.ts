@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import api from '../services/api';
-import type { Story, PassageWithContext, Bookmark, Passage, Link, StoryWithPassages } from '../types';
+import type { Story, PassageWithContext, Bookmark, Link, StoryWithPassages } from '../types';
 
 interface HistoryEntry {
   id: string;
@@ -31,6 +31,7 @@ interface StoryState {
   fetchStoryStructure: (storyId: string) => Promise<void>;
   startStory: (storyId: string) => Promise<void>;
   loadPassageById: (passageId: string, updateHistory?: boolean) => Promise<void>;
+  loadPassageByNumber: (passageNumber: number, storyId: string) => Promise<void>;
   navigateToPassage: (passageIdOrName: string, prevPassageId?: string) => Promise<void>;
   navigateViaLink: (linkId: string) => Promise<void>;
   goBack: () => Promise<void>;
@@ -175,6 +176,40 @@ export const useStoryStore = create<StoryState>((set, get) => ({
           currentPassage: response.data,
         });
       }
+      get().saveLastVisit();
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loadPassageByNumber: async (passageNumber: number, storyId: string) => {
+    set({ isLoading: true });
+    try {
+      // Resolve passage number to passage ID using resolve API
+      const reference = `#${passageNumber.toString().padStart(6, '0')}`;
+      const response = await api.get(`/passages/resolve`, {
+        params: {
+          story_id: storyId,
+          reference: reference,
+        },
+      });
+
+      const passage = response.data.passage;
+
+      // Load story if not already loaded or different
+      const currentStory = get().currentStory;
+      if (!currentStory || currentStory.id !== storyId) {
+        await get().fetchStory(storyId);
+      }
+
+      // Set current passage without updating history (direct URL access)
+      set({
+        currentPassage: response.data,
+        previousPassageId: null,
+        navigationHistory: [passage.id],
+        navigationHistoryWithNames: [{ id: passage.id, name: passage.name }],
+        currentHistoryIndex: 0,
+      });
       get().saveLastVisit();
     } finally {
       set({ isLoading: false });

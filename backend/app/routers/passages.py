@@ -4,13 +4,59 @@ from sqlalchemy import select
 from typing import Optional
 from app.database import get_db
 from app.models.passage import Passage
+from app.models.story import Story
 from app.models.analytics import VisitLog
-from app.schemas.story import PassageWithContext, NavigationRequest
+from app.schemas.story import PassageWithContext, NavigationRequest, PassageResponse
 from app.services.story_engine import StoryEngine
 from app.core.dependencies import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/api/passages", tags=["passages"])
+
+@router.get("/resolve", response_model=PassageResponse)
+async def resolve_passage_reference(
+    story_id: str = Query(...),
+    reference: str = Query(..., description="Passage name or #XXXXXX ID format"),
+    db: AsyncSession = Depends(get_db)
+):
+    """Resolve a passage reference to its full data."""
+    # Check if story exists and is active
+    story_result = await db.execute(
+        select(Story).where(Story.id == story_id, Story.is_active == True)
+    )
+    if not story_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    # Check if reference is in #XXXXXX format
+    if reference.startswith('#'):
+        try:
+            passage_number = int(reference[1:])
+            # Validate bounds (1 to 999999)
+            if passage_number <= 0 or passage_number > 999999:
+                raise HTTPException(status_code=400, detail="Invalid passage number")
+            result = await db.execute(
+                select(Passage).where(
+                    Passage.story_id == story_id,
+                    Passage.passage_number == passage_number
+                )
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid passage number format")
+    else:
+        # Query by passage name
+        result = await db.execute(
+            select(Passage).where(
+                Passage.story_id == story_id,
+                Passage.name == reference
+            )
+        )
+
+    passage = result.scalar_one_or_none()
+
+    if not passage:
+        raise HTTPException(status_code=404, detail="Passage not found")
+
+    return passage
 
 @router.get("/{passage_id}", response_model=PassageWithContext)
 async def get_passage(

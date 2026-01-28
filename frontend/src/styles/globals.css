@@ -162,3 +162,14 @@ body {
 .twine-content .hook-visible {
   @apply block;
 }
+
+/* Broken passage link styles */
+.passage-link-broken {
+  color: #dc2626; /* red-600 */
+  text-decoration: underline wavy;
+  cursor: not-allowed;
+}
+
+.passage-link-broken:hover {
+  background-color: #fee2e2; /* red-100 */
+}

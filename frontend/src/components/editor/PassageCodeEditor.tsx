@@ -17,7 +17,6 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import {
   autocompletion,
   completionKeymap,
-  Completion,
   CompletionContext,
   CompletionResult,
 } from '@codemirror/autocomplete';
@@ -57,20 +56,45 @@ export const PassageCodeEditor: React.FC<PassageCodeEditorProps> = ({
       const passageLinkMatch = context.matchBefore(/\[\[[^\]]*$/);
       if (passageLinkMatch) {
         const typed = passageLinkMatch.text.slice(2); // Remove [[
-        const filteredPassages = passages.filter((p) =>
-          p.name.toLowerCase().includes(typed.toLowerCase())
-        );
+        const isIdSearch = typed.startsWith('#');
+
+        let filteredPassages;
+        if (isIdSearch) {
+          const idPrefix = typed.slice(1); // Remove #
+          filteredPassages = passages.filter((p) =>
+            p.passage_number?.toString().includes(idPrefix)
+          );
+        } else {
+          filteredPassages = passages.filter((p) =>
+            p.name.toLowerCase().includes(typed.toLowerCase())
+          );
+        }
 
         if (filteredPassages.length === 0) return null;
 
         return {
           from: passageLinkMatch.from + 2,
-          options: filteredPassages.map((p) => ({
-            label: p.name,
-            type: 'class',
-            info: `Go to: ${p.name}`,
-            apply: `${p.name}]]`,
-          })),
+          options: filteredPassages.map((p) => {
+            const displayId = p.passage_number
+              ? `#${p.passage_number.toString().padStart(6, '0')}`
+              : '';
+
+            if (isIdSearch && displayId) {
+              return {
+                label: `${displayId} - ${p.name}`,
+                type: 'class',
+                info: `Go to: ${p.name}`,
+                apply: `${displayId}]]`,
+              };
+            }
+
+            return {
+              label: `${p.name}${displayId ? ` (${displayId})` : ''}`,
+              type: 'class',
+              info: `Go to: ${p.name}`,
+              apply: `${p.name}]]`,
+            };
+          }),
         };
       }
 

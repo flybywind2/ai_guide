@@ -21,7 +21,7 @@ const TWINE_STATE_KEY = 'twine_story_state';
 
 export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
   const { passage, available_links } = context;
-  const { bookmarks, addBookmark, removeBookmark, navigateToPassage, navigateViaLink, currentStory, refreshCurrentPassage } =
+  const { bookmarks, addBookmark, removeBookmark, navigateToPassage, navigateViaLink, currentStory, refreshCurrentPassage, storyStructure } =
     useStoryStore();
   const { isAuthenticated, user } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -173,6 +173,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           state={twineState}
           onStateChange={handleStateChange}
           onNavigate={handleNavigate}
+          passages={storyStructure?.passages || []}
         />
       )}
 

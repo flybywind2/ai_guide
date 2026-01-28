@@ -40,6 +40,7 @@ class PassageUpdate(BaseModel):
 class PassageResponse(PassageBase):
     id: str
     story_id: str
+    passage_number: Optional[int] = None
     created_at: str
     updated_at: str
 

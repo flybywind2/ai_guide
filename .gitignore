@@ -8,3 +8,5 @@ settings.local.json
 .claude
 .omc
 .playwright-mcp
+backend.log
+frontend.log

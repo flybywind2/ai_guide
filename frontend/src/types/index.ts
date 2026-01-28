@@ -33,6 +33,7 @@ export interface Passage {
   position_y: number;
   width: number;
   height: number;
+  passage_number?: number;
   created_at: string;
   updated_at: string;
 }
@@ -85,4 +86,16 @@ export interface Bookmark {
 export interface Token {
   access_token: string;
   token_type: string;
+}
+
+export function formatPassageId(passageNumber: number | undefined): string {
+  if (!passageNumber) return '';
+  return `#${passageNumber.toString().padStart(6, '0')}`;
+}
+
+export function formatPassageLabel(passage: Passage): string {
+  if (passage.passage_number) {
+    return `${passage.name} (${formatPassageId(passage.passage_number)})`;
+  }
+  return passage.name;
 }

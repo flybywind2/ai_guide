@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import {
   processPassageContent,
   TwineState,
 } from '../../utils/twine-runtime';
+import { Passage } from '../../types';
 
 interface TwinePassageRendererProps {
   content: string;
   state: TwineState;
   onStateChange: (newState: TwineState) => void;
   onNavigate: (passageName: string) => void;
+  passages?: Passage[];
   className?: string;
 }
 
@@ -17,15 +20,25 @@ export const TwinePassageRenderer: React.FC<TwinePassageRendererProps> = ({
   state,
   onStateChange,
   onNavigate,
+  passages = [],
   className = '',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Process content with macros
+  // Process content with macros and sanitize HTML
   const { html, newState } = useMemo(() => {
-    const result = processPassageContent(content, state);
-    return { html: result.html, newState: result.state };
-  }, [content, state]);
+    const result = processPassageContent(content, state, undefined, passages);
+
+    // Sanitize HTML to prevent XSS attacks
+    const sanitizedHtml = DOMPurify.sanitize(result.html, {
+      ADD_ATTR: ['data-passage', 'data-passage-id', 'data-action', 'data-hook'],
+      ADD_TAGS: ['span', 'a'],
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'span', 'div'],
+      ALLOWED_ATTR: ['class', 'data-passage', 'data-passage-id', 'data-action', 'data-hook', 'href']
+    });
+
+    return { html: sanitizedHtml, newState: result.state };
+  }, [content, state, passages]);
 
   // Update state if changed
   useEffect(() => {
@@ -45,6 +58,19 @@ export const TwinePassageRenderer: React.FC<TwinePassageRendererProps> = ({
 
       if (passageLink) {
         e.preventDefault();
+
+        // Try passage_id first (ID-based navigation)
+        const passageId = passageLink.getAttribute('data-passage-id');
+        if (passageId && passages.length > 0) {
+          const passageNumber = parseInt(passageId, 10);
+          const passage = passages.find(p => p.passage_number === passageNumber);
+          if (passage) {
+            onNavigate(passage.name);
+            return;
+          }
+        }
+
+        // Fallback to passage name (name-based navigation)
         const passageName = passageLink.getAttribute('data-passage');
         if (passageName) {
           onNavigate(passageName);
@@ -54,7 +80,7 @@ export const TwinePassageRenderer: React.FC<TwinePassageRendererProps> = ({
 
     container.addEventListener('click', handleClick);
     return () => container.removeEventListener('click', handleClick);
-  }, [onNavigate]);
+  }, [onNavigate, passages]);
 
   return (
     <div

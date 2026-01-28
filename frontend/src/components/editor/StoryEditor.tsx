@@ -23,7 +23,7 @@ import { TipTapEditor } from './TipTapEditor';
 import { PassageCodeEditor } from './PassageCodeEditor';
 import { MacroGuideModal } from './MacroGuideModal';
 import { BranchNode } from './BranchNode';
-import { extractPassageLinks, extractVariables } from './twine-syntax';
+import { extractVariables, extractPassageRefs, PassageRef } from './twine-syntax';
 import { parseBranchData, serializeBranchData, createDefaultBranchData, BranchChoice } from '../../utils/branch-utils';
 
 const nodeTypes = {
@@ -132,9 +132,16 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       const existingEdgeSet = new Set(data.links.map(l => `${l.source_passage_id}-${l.target_passage_id}`));
 
       data.passages.forEach((passage) => {
-        const linkedNames = extractPassageLinks(passage.content || '');
-        linkedNames.forEach((linkName) => {
-          const targetPassage = data.passages.find((p) => p.name === linkName);
+        const refs = extractPassageRefs(passage.content || '');
+        refs.forEach((ref) => {
+          let targetPassage;
+          if (ref.type === 'id') {
+            const passageNumber = parseInt(ref.value, 10);
+            targetPassage = data.passages.find((p) => p.passage_number === passageNumber);
+          } else {
+            targetPassage = data.passages.find((p) => p.name === ref.value);
+          }
+
           if (targetPassage && targetPassage.id !== passage.id) {
             const edgeKey = `${passage.id}-${targetPassage.id}`;
             if (!existingEdgeSet.has(edgeKey)) {
@@ -648,7 +655,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [passageType, setPassageType] = useState(passage.passage_type);
   const [isSaving, setIsSaving] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('code');
-  const [linkedPassages, setLinkedPassages] = useState<string[]>([]);
+  const [linkedPassages, setLinkedPassages] = useState<PassageRef[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
   
   const isInitializedRef = useRef(false);
@@ -738,13 +745,6 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         // 저장 후 초기값 업데이트
         initialBranchChoicesRef.current = JSON.stringify(branchChoices);
 
-        // allPassages 업데이트 (다른 노드 갔다가 돌아와도 최신 데이터 유지)
-        setAllPassages(prev => prev.map(p =>
-          p.id === passage.id
-            ? { ...p, name, content: fullContent, passage_type: passageType }
-            : p
-        ));
-
         console.log('✅ Branch choices auto-saved');
       } catch (error) {
         console.error('Failed to auto-save branch choices:', error);
@@ -777,8 +777,8 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   }, [isContentMaximized]);
 
   useEffect(() => {
-    const links = extractPassageLinks(rawContent);
-    setLinkedPassages(links);
+    const refs = extractPassageRefs(rawContent);
+    setLinkedPassages(refs);
   }, [rawContent]);
 
   useEffect(() => {
@@ -1083,8 +1083,22 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
             Linked Passages ({linkedPassages.length})
           </h4>
           <div className="flex flex-wrap gap-2">
-            {linkedPassages.map((link, index) => {
-              const exists = allPassages.some((p) => p.name === link);
+            {linkedPassages.map((ref, index) => {
+              let exists = false;
+              let displayText = '';
+
+              if (ref.type === 'id') {
+                const passageNumber = parseInt(ref.value, 10);
+                const foundPassage = allPassages.find((p) => p.passage_number === passageNumber);
+                exists = !!foundPassage;
+                displayText = foundPassage
+                  ? `${foundPassage.name} (#${ref.value.padStart(6, '0')})`
+                  : `#${ref.value.padStart(6, '0')}`;
+              } else {
+                exists = allPassages.some((p) => p.name === ref.value);
+                displayText = ref.value;
+              }
+
               return (
                 <span
                   key={index}
@@ -1094,7 +1108,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                       : 'bg-red-100 text-red-700'
                   }`}
                 >
-                  {link}
+                  {displayText}
                   {!exists && (
                     <span className="ml-1 text-red-500" title="Passage not found">
                       ⚠

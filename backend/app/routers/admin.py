@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from typing import List
+from sqlalchemy.exc import IntegrityError
+from typing import List, Optional
 from datetime import datetime
 import json
 import uuid
@@ -20,6 +21,7 @@ from app.schemas.story import (
     LinkCreate, LinkUpdate, LinkResponse, StoryReorderRequest
 )
 from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.feedback import FeedbackWithPassageInfo, FeedbackResponse
 from app.core.dependencies import get_admin_user, get_super_admin
 from app.config import get_settings
 
@@ -174,6 +176,7 @@ async def get_story_full(
                 position_y=p.position_y,
                 width=p.width,
                 height=p.height,
+                passage_number=p.passage_number,
                 created_at=p.created_at,
                 updated_at=p.updated_at
             )
@@ -264,20 +267,41 @@ async def create_passage(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_admin_user)
 ):
-    passage = Passage(
-        story_id=passage_data.story_id,
-        name=passage_data.name,
-        content=passage_data.content,
-        passage_type=passage_data.passage_type.value,
-        tags=json.dumps(passage_data.tags),
-        position_x=passage_data.position_x,
-        position_y=passage_data.position_y,
-        width=passage_data.width,
-        height=passage_data.height
-    )
-    db.add(passage)
-    await db.commit()
-    await db.refresh(passage)
+    # Retry logic to handle race condition in passage_number assignment
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Get next passage_number for this story
+            result = await db.execute(
+                select(func.max(Passage.passage_number))
+                .where(Passage.story_id == passage_data.story_id)
+            )
+            max_number = result.scalar() or 0
+            next_number = max_number + 1
+
+            passage = Passage(
+                story_id=passage_data.story_id,
+                name=passage_data.name,
+                content=passage_data.content,
+                passage_type=passage_data.passage_type.value,
+                tags=json.dumps(passage_data.tags),
+                position_x=passage_data.position_x,
+                position_y=passage_data.position_y,
+                width=passage_data.width,
+                height=passage_data.height,
+                passage_number=next_number
+            )
+            db.add(passage)
+            await db.commit()
+            await db.refresh(passage)
+
+            # Success - break out of retry loop
+            break
+        except IntegrityError:
+            await db.rollback()
+            if attempt == max_retries - 1:
+                raise HTTPException(status_code=409, detail="Failed to assign passage number after retries")
+            # Continue to next retry attempt
 
     return PassageResponse(
         id=passage.id,
@@ -290,6 +314,7 @@ async def create_passage(
         position_y=passage.position_y,
         width=passage.width,
         height=passage.height,
+        passage_number=passage.passage_number,
         created_at=passage.created_at,
         updated_at=passage.updated_at
     )
@@ -338,6 +363,7 @@ async def update_passage(
         position_y=passage.position_y,
         width=passage.width,
         height=passage.height,
+        passage_number=passage.passage_number,
         created_at=passage.created_at,
         updated_at=passage.updated_at
     )
@@ -568,3 +594,109 @@ async def get_passage_stats(
             })
 
     return passage_stats
+
+# ===== Feedback Management =====
+async def build_feedback_response(feedback: Feedback, db: AsyncSession) -> FeedbackResponse:
+    user_name = None
+    if feedback.user_id and not feedback.is_anonymous:
+        result = await db.execute(select(User).where(User.id == feedback.user_id))
+        user = result.scalar_one_or_none()
+        if user:
+            user_name = user.name
+
+    # Get replies
+    result = await db.execute(
+        select(Feedback)
+        .where(Feedback.parent_id == feedback.id)
+        .order_by(Feedback.created_at)
+    )
+    replies_db = result.scalars().all()
+
+    replies = []
+    for reply in replies_db:
+        reply_response = await build_feedback_response(reply, db)
+        replies.append(reply_response)
+
+    return FeedbackResponse(
+        id=feedback.id,
+        user_id=feedback.user_id if not feedback.is_anonymous else None,
+        user_name=user_name,
+        passage_id=feedback.passage_id,
+        content=feedback.content,
+        is_anonymous=bool(feedback.is_anonymous),
+        parent_id=feedback.parent_id,
+        created_at=feedback.created_at,
+        updated_at=feedback.updated_at,
+        replies=replies
+    )
+
+@router.get("/feedback/all", response_model=List[FeedbackWithPassageInfo])
+async def get_all_feedback_admin(
+    story_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_admin_user)
+):
+    """Get all feedback across all passages (admin only)"""
+    # Get top-level feedbacks only
+    query = select(Feedback).where(Feedback.parent_id == None)
+
+    if story_id:
+        # Filter by story - need to join with passages
+        query = query.join(Passage, Feedback.passage_id == Passage.id).where(Passage.story_id == story_id)
+
+    query = query.order_by(Feedback.created_at.desc())
+    result = await db.execute(query)
+    feedbacks = result.scalars().all()
+
+    responses = []
+    for f in feedbacks:
+        # Get user name
+        user_name = None
+        if f.user_id and not f.is_anonymous:
+            result = await db.execute(select(User).where(User.id == f.user_id))
+            feedback_user = result.scalar_one_or_none()
+            if feedback_user:
+                user_name = feedback_user.name
+
+        # Get passage and story info
+        passage_name = None
+        story_id_val = None
+        story_name = None
+        if f.passage_id:
+            result = await db.execute(select(Passage).where(Passage.id == f.passage_id))
+            passage = result.scalar_one_or_none()
+            if passage:
+                passage_name = passage.name
+                story_id_val = passage.story_id
+                result = await db.execute(select(Story).where(Story.id == passage.story_id))
+                story = result.scalar_one_or_none()
+                if story:
+                    story_name = story.name
+
+        # Count replies
+        result = await db.execute(
+            select(func.count(Feedback.id)).where(Feedback.parent_id == f.id)
+        )
+        reply_count = result.scalar() or 0
+
+        # Get replies
+        replies_response = await build_feedback_response(f, db)
+
+        responses.append(FeedbackWithPassageInfo(
+            id=f.id,
+            user_id=f.user_id if not f.is_anonymous else None,
+            user_name=user_name,
+            passage_id=f.passage_id,
+            passage_name=passage_name,
+            story_id=story_id_val,
+            story_name=story_name,
+            content=f.content,
+            is_anonymous=bool(f.is_anonymous),
+            parent_id=f.parent_id,
+            created_at=f.created_at,
+            updated_at=f.updated_at,
+            reply_count=reply_count,
+            replies=replies_response.replies
+        ))
+
+    return responses

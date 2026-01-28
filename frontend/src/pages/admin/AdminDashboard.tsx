@@ -119,7 +119,7 @@ export const AdminDashboard: React.FC = () => {
   const fetchFeedbacks = async () => {
     try {
       const params = selectedStoryFilter ? { story_id: selectedStoryFilter } : {};
-      const res = await api.get('/feedback/admin/all', { params });
+      const res = await api.get('/admin/feedback/all', { params });
       setFeedbacks(res.data);
     } catch (error) {
       console.error('Failed to fetch feedbacks:', error);

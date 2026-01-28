@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStoryStore } from '../../stores/storyStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Header } from '../../components/layout/Header';
@@ -13,12 +13,23 @@ import { Map as MapIcon } from 'lucide-react';
 export const PassagePage: React.FC = () => {
   const navigate = useNavigate();
   const { passageId } = useParams<{ passageId?: string }>();
-  const { currentPassage, currentStory, fetchBookmarks, isLoading, loadPassageById } = useStoryStore();
+  const [searchParams] = useSearchParams();
+  const { currentPassage, currentStory, fetchBookmarks, isLoading, loadPassageById, loadPassageByNumber } = useStoryStore();
   const { isAuthenticated } = useAuthStore();
   const [showStoryMap, setShowStoryMap] = useState(false);
 
   useEffect(() => {
-    // If passageId is in URL, load that passage
+    // Check if passage_number query param exists
+    const passageNumberParam = searchParams.get('number');
+    const storyIdParam = searchParams.get('story');
+
+    if (passageNumberParam && storyIdParam) {
+      // Load passage by number
+      loadPassageByNumber(parseInt(passageNumberParam, 10), storyIdParam);
+      return;
+    }
+
+    // If passageId is in URL path, load that passage
     if (passageId) {
       loadPassageById(passageId, false);
       return;
@@ -29,7 +40,7 @@ export const PassagePage: React.FC = () => {
       navigate('/');
       return;
     }
-  }, [passageId]);
+  }, [passageId, searchParams]);
 
   useEffect(() => {
     if (isAuthenticated && currentStory) {

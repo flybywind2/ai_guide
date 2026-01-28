@@ -371,24 +371,68 @@ export const macroDefinitions = [
   },
 ];
 
+// Passage reference type
+export interface PassageRef {
+  type: 'name' | 'id';
+  value: string;  // name이면 passage name, id면 passage_number (문자열)
+  displayText?: string;
+}
+
 // Passage link patterns
 // Pattern for passage links - handles both [[passage]] and [[text->passage]] or [[text|passage]]
 export const passageLinkPattern = /\[\[([^\]|\->]+)(?:\||->)([^\]]+)\]\]|\[\[([^\]]+)\]\]/g;
 
-// Extract passage names from content
-export function extractPassageLinks(content: string): string[] {
-  const links: string[] = [];
+// Extract passage references (both name-based and ID-based) from content
+export function extractPassageRefs(content: string): PassageRef[] {
+  const refs: PassageRef[] = [];
+
+  // ID-based with custom text: [[text->#000001]] or [[text|#000001]]
+  const idArrowPattern = /\[\[([^\]|\->]+)(?:->|\|)#(\d{1,6})\]\]/g;
   let match;
-  const regex = new RegExp(passageLinkPattern.source, passageLinkPattern.flags);
-  while ((match = regex.exec(content)) !== null) {
-    // Pattern: [[text->passage]] or [[text|passage]] captures in match[1] and match[2]
-    // Pattern: [[passage]] captures in match[3]
-    const passageName = match[2] || match[3];
-    if (passageName && !links.includes(passageName.trim())) {
-      links.push(passageName.trim());
+  while ((match = idArrowPattern.exec(content)) !== null) {
+    const passageNumber = match[2];
+    if (!refs.some(r => r.type === 'id' && r.value === passageNumber)) {
+      refs.push({ type: 'id', value: passageNumber, displayText: match[1].trim() });
     }
   }
-  return links;
+
+  // Simple ID: [[#000001]]
+  const idSimplePattern = /\[\[#(\d{1,6})\]\]/g;
+  while ((match = idSimplePattern.exec(content)) !== null) {
+    const passageNumber = match[1];
+    if (!refs.some(r => r.type === 'id' && r.value === passageNumber)) {
+      refs.push({ type: 'id', value: passageNumber });
+    }
+  }
+
+  // Name-based with custom text: [[text->passage]] or [[text|passage]] (excluding ID refs)
+  const arrowPattern = /\[\[([^\]|\->]+)(?:->|\|)([^\]#][^\]]*)\]\]/g;
+  while ((match = arrowPattern.exec(content)) !== null) {
+    const passageName = match[2].trim();
+    if (!refs.some(r => r.type === 'name' && r.value === passageName)) {
+      refs.push({ type: 'name', value: passageName, displayText: match[1].trim() });
+    }
+  }
+
+  // Simple name: [[passage]] (excluding ID refs)
+  const simplePattern = /\[\[([^\]#|\->]+)\]\]/g;
+  while ((match = simplePattern.exec(content)) !== null) {
+    const passageName = match[1].trim();
+    if (!refs.some(r => r.type === 'name' && r.value === passageName)) {
+      refs.push({ type: 'name', value: passageName });
+    }
+  }
+
+  return refs;
+}
+
+// Extract passage names from content (backward compatibility)
+export function extractPassageLinks(content: string): string[] {
+  const refs = extractPassageRefs(content);
+  // name-based links만 반환 (backward compatibility)
+  return refs
+    .filter(r => r.type === 'name')
+    .map(r => r.value);
 }
 
 // Extract variables from content
@@ -409,5 +453,6 @@ export default {
   twineHighlightStyle,
   macroDefinitions,
   extractPassageLinks,
+  extractPassageRefs,
   extractVariables,
 };

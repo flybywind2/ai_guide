@@ -1,6 +1,8 @@
 // Twine-style macro runtime engine
 // Processes passage content and renders macros
 
+import type { Passage } from '../types';
+
 export interface TwineState {
   variables: Record<string, unknown>;
   visitedPassages: string[];
@@ -263,11 +265,17 @@ function evaluateCondition(condition: string, state: TwineState): boolean {
   return Boolean(result);
 }
 
+// Helper function to find passage by passage_number
+function findPassageByNumber(passages: Passage[], passageNumber: number): Passage | undefined {
+  return passages.find(p => p.passage_number === passageNumber);
+}
+
 // Process passage content with all macros
 export function processPassageContent(
   content: string,
   state: TwineState,
-  onNavigate?: (passageName: string) => void
+  _onNavigate?: (passageName: string) => void,
+  passages?: Passage[]
 ): { html: string; state: TwineState } {
   let newState = { ...state };
   let html = content;
@@ -288,7 +296,30 @@ export function processPassageContent(
     return result;
   });
 
-  // Process passage links: [[passage]] or [[text->passage]] or [[text|passage]]
+  // Process ID-based links with custom text: [[text->#000001]] or [[text|#000001]]
+  html = html.replace(
+    /\[\[([^\]|]+?)(?:\||->)#(\d{1,6})\]\]/g,
+    (_, text, idStr) => {
+      const passageNumber = parseInt(idStr, 10);
+      const passage = passages ? findPassageByNumber(passages, passageNumber) : null;
+      if (passage) {
+        return `<a class="passage-link" data-passage="${passage.name}" data-passage-id="${idStr}">${text.trim()}</a>`;
+      }
+      return `<a class="passage-link passage-link-broken" data-passage-id="${idStr}" title="Passage not found">${text.trim()} ⚠</a>`;
+    }
+  );
+
+  // Process simple ID-based links: [[#000001]]
+  html = html.replace(/\[\[#(\d{1,6})\]\]/g, (_, idStr) => {
+    const passageNumber = parseInt(idStr, 10);
+    const passage = passages ? findPassageByNumber(passages, passageNumber) : null;
+    if (passage) {
+      return `<a class="passage-link" data-passage="${passage.name}" data-passage-id="${idStr}">${passage.name}</a>`;
+    }
+    return `<a class="passage-link passage-link-broken" data-passage-id="${idStr}" title="Passage not found">#${idStr} ⚠</a>`;
+  });
+
+  // Process name-based passage links: [[passage]] or [[text->passage]] or [[text|passage]]
   html = html.replace(
     /\[\[([^\]|]+?)(?:\||->)([^\]]+)\]\]/g,
     (_, text, passage) => {
