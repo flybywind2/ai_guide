@@ -9,17 +9,18 @@ export default {
       colors: {
         primary: {
           main: 'var(--primary-main)',
-          light: 'var(--primary-light)',
-          dark: 'var(--primary-dark)',
+          light: 'var(--secondary-purple-1)', // Re-map to secondary purple 1 as it is lighter
+          dark: 'var(--primary-hover)',
+          hover: 'var(--primary-hover)',
           // Mapping for backward compatibility
           50: '#F5F3FF',
           100: '#EDE9FE',
           200: '#DDD6FE',
           300: '#C4B5FD',
-          400: 'var(--primary-light)',
+          400: 'var(--secondary-purple-1)',
           500: 'var(--primary-main)',
-          600: 'var(--primary-dark)',
-          700: 'var(--primary-dark)',
+          600: 'var(--primary-hover)',
+          700: '#4C1D95',
           800: '#5B21B6',
           900: '#4C1D95',
         },

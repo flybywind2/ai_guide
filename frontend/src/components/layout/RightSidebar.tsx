@@ -208,7 +208,7 @@ export const RightSidebar: React.FC = () => {
 
   if (rightSidebarCollapsed) {
     return (
-      <aside className="w-[48px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <aside className="w-[48px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)] z-30">
         <button
           onClick={toggleRightSidebar}
           className="p-3 hover:bg-white/40 transition-colors"
@@ -220,7 +220,7 @@ export const RightSidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-[320px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+    <aside className="w-[320px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)] z-30">
       <div className="p-4 border-b border-white/20 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gray-600" />

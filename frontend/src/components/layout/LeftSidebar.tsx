@@ -35,7 +35,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
 
     if (leftSidebarCollapsed) {
     return (
-      <aside className="w-[60px] glass-panel border-r border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <aside className="w-[60px] glass-panel border-r border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)] z-30">
         <button
           onClick={toggleLeftSidebar}
           className="p-4 hover:bg-white/40 transition-colors"
@@ -47,7 +47,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   }
 
   return (
-    <aside className="w-[280px] glass-panel border-r border-white/20 flex flex-col overflow-hidden sticky top-16 h-[calc(100vh-64px)]">
+    <aside className="w-[280px] glass-panel border-r border-white/20 flex flex-col overflow-hidden sticky top-16 h-[calc(100vh-64px)] z-30">
       <div className="p-4 border-b border-white/20 flex items-center justify-between flex-shrink-0">
         <span className="font-semibold text-gray-900">내비게이션</span>
         <button
