@@ -189,7 +189,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
               <div className="absolute inset-0 bg-secondary-green/30 blur-lg rounded-full animate-pulse" />
               <div className="relative flex items-center gap-3 px-6 py-3 bg-white border-2 border-secondary-green rounded-full shadow-[0_0_15px_rgba(162,237,180,0.4)]">
                 <GitFork className="w-6 h-6 text-secondary-green-dark" />
-                <span className="text-base font-bold bg-gradient-to-r from-secondary-green-dark to-primary-main bg-clip-text text-transparent uppercase tracking-wider">
+                <span className="text-base font-bold text-secondary-green-dark uppercase tracking-wider">
                   운명의 갈림길
                 </span>
               </div>
