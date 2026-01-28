@@ -10,3 +10,13 @@ settings.local.json
 .playwright-mcp
 backend.log
 frontend.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
