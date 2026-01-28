@@ -434,7 +434,7 @@ export const AdminDashboard: React.FC = () => {
                         <IconComponent className="w-5 h-5 text-primary-600" />
                       </button>
                       {iconPickerStoryId === story.id && (
-                        <div className="absolute top-12 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-48">
+                        <div className="absolute top-12 left-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-48">
                           <div className="flex items-center justify-between mb-2 pb-2 border-b">
                             <span className="text-xs font-medium text-gray-600">
                               Select Icon
