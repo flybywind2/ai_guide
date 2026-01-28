@@ -25,7 +25,6 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
   );
   // Sort links by link_order
   const sortedAutoLinks = [...autoLinks].sort((a, b) => a.link_order - b.link_order);
-  const primaryAutoLink = sortedAutoLinks[0];
 
   const handleLinkClick = async (linkId: string) => {
     await navigateViaLink(linkId);

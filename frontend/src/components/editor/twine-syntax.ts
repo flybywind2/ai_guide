@@ -1,5 +1,5 @@
 // Twine-style syntax highlighting for CodeMirror 6
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import {
   ViewPlugin,
@@ -10,17 +10,6 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 
-// Custom tags for Twine syntax
-const twineTags = {
-  passageLink: tags.link,
-  macro: tags.keyword,
-  macroName: tags.function(tags.keyword),
-  variable: tags.variableName,
-  hook: tags.labelName,
-  string: tags.string,
-  comment: tags.comment,
-  operator: tags.operator,
-};
 
 // Highlight style for Twine syntax
 export const twineHighlightStyle = HighlightStyle.define([
@@ -53,7 +42,6 @@ const patterns = {
 // Decoration classes
 const passageLinkDeco = Decoration.mark({ class: 'cm-passage-link' });
 const macroDeco = Decoration.mark({ class: 'cm-macro' });
-const macroNameDeco = Decoration.mark({ class: 'cm-macro-name' });
 const variableDeco = Decoration.mark({ class: 'cm-variable' });
 const hookDeco = Decoration.mark({ class: 'cm-hook' });
 const stringDeco = Decoration.mark({ class: 'cm-string' });

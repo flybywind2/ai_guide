@@ -37,8 +37,8 @@ const StoryMapModalContent: React.FC<StoryMapModalProps> = ({
   currentPassageId,
 }) => {
   const navigate = useNavigate();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -148,7 +148,7 @@ const StoryMapModalContent: React.FC<StoryMapModalProps> = ({
     }
   };
 
-  const handleNodeClick: NodeMouseHandler = (event, node) => {
+  const handleNodeClick: NodeMouseHandler = (_event, node) => {
     // Navigate to the passage
     navigate(`/passage/${node.id}`);
     onClose();

@@ -75,8 +75,8 @@ function computeMainPath(structure: StoryWithPassages): MainPathEntry[] {
     });
 
     // Find next passage via primary link (lowest link_order, preferring 'always' type)
-    const outLinks = linksBySource.get(currentId) || [];
-    const sortedLinks = [...outLinks].sort((a, b) => {
+    const outLinks: typeof links = linksBySource.get(currentId) || [];
+    const sortedLinks: typeof links = [...outLinks].sort((a, b) => {
       // Prefer 'always' and 'previous_passage' over 'user_selection'
       if (a.condition_type !== 'user_selection' && b.condition_type === 'user_selection') return -1;
       if (a.condition_type === 'user_selection' && b.condition_type !== 'user_selection') return 1;
@@ -342,7 +342,6 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       const response = await api.get(`/passages/${passageId}`, {
         params: { previous_passage_id: prevPassageId },
       });
-      const passage = response.data.passage;
 
       // Update navigation history to reflect this jump
       // Build history from start to this point in main path

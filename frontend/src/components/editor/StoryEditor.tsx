@@ -4,7 +4,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
   useNodesState,
   useEdgesState,
   Connection,
@@ -38,8 +37,8 @@ type EditorMode = 'code' | 'wysiwyg';
 
 export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [story, setStory] = useState<StoryWithPassages | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedPassageId, setSelectedPassageId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -116,7 +115,7 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
       });
 
       // Sort each group by link_order
-      linksBySource.forEach((links, sourceId) => {
+      linksBySource.forEach((links) => {
         links.sort((a, b) => a.link_order - b.link_order);
       });
 
@@ -219,11 +218,9 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
       try {
         let linkOrder = 0;
-        let isBranchLink = false;
 
         if (connection.sourceHandle?.startsWith('choice-')) {
           linkOrder = parseInt(connection.sourceHandle.replace('choice-', ''), 10);
-          isBranchLink = true;
         } else {
           // For non-branch links, find the max link_order from the same source and add 1
           const story = await fetchStory();
@@ -233,9 +230,6 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
             linkOrder = maxOrder + 1;
           }
         }
-
-        const sourcePassage = allPassages.find(p => p.id === connection.source);
-        const isStartSource = sourcePassage?.passage_type === 'start';
 
         await api.post('/admin/links', {
           story_id: storyId,
@@ -720,13 +714,13 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
             <div>
               <label className="block text-sm font-medium mb-1">조건 타입</label>
               <select
-                value={selectedEdge.data?.conditionType || 'always'}
+                value={(selectedEdge.data?.conditionType as string) || 'always'}
                 onChange={(e) => {
                   const newType = e.target.value;
                   updateLinkCondition(
                     selectedEdge.id,
                     newType,
-                    newType === 'previous_passage' ? selectedEdge.data?.conditionValue : undefined
+                    newType === 'previous_passage' ? (selectedEdge.data?.conditionValue as string | undefined) : undefined
                   );
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -746,7 +740,7 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
               <div>
                 <label className="block text-sm font-medium mb-1">필요한 이전 페이지</label>
                 <select
-                  value={selectedEdge.data?.conditionValue || ''}
+                  value={(selectedEdge.data?.conditionValue as string) || ''}
                   onChange={(e) => {
                     updateLinkCondition(
                       selectedEdge.id,
@@ -943,7 +937,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [isContentMaximized, setIsContentMaximized] = useState(false);
   
   const isInitializedRef = useRef(false);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialBranchChoicesRef = useRef<string>(''); // 초기값 저장용
 
   // 초기화

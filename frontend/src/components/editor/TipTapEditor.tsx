@@ -24,7 +24,6 @@ import {
   Heading3,
   Minus,
   Table as TableIcon,
-  Plus,
   Trash2,
   RowsIcon,
   Columns,
