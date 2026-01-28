@@ -106,8 +106,8 @@ export const StorySelectPage: React.FC = () => {
                     onClick={() => handleStartStory(story.id)}
                     className="text-center py-8"
                   >
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/10 flex items-center justify-center border border-primary-500/20 group-hover:border-secondary-green/50 group-hover:bg-secondary-green/10 transition-colors">
-                      <IconComponent className="w-8 h-8 text-primary-500 group-hover:text-secondary-green-dark transition-colors" />
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-secondary-green/20 to-secondary-green/5 flex items-center justify-center border border-secondary-green/30 transition-all duration-300 group-hover:scale-110 group-hover:border-secondary-green/60 group-hover:shadow-lg group-hover:shadow-secondary-green/20">
+                      <IconComponent className="w-8 h-8 text-secondary-green-dark transition-colors" />
                     </div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
                       {story.name}

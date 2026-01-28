@@ -179,17 +179,17 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Show branch choices for branch and start passages */}
       {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length > 0 && (
-        <div className="mt-8 pt-6 border-t-2 border-amber-200">
+        <div className="mt-8 pt-6 border-t-2 border-secondary-green/20">
           {/* Branch header */}
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-300" />
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full">
-              <GitFork className="w-5 h-5 text-amber-600" />
-              <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-secondary-green/40" />
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-secondary-green/10 to-secondary-green/20 rounded-full border border-secondary-green/20">
+              <GitFork className="w-5 h-5 text-secondary-green-dark" />
+              <span className="text-sm font-semibold text-secondary-green-dark uppercase tracking-wide">
                 Choose Your Path
               </span>
             </div>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-300" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-secondary-green/40" />
           </div>
 
           {/* Branch choices */}
@@ -209,7 +209,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                   disabled={!matchingLink}
                   className={`w-full group relative p-5 bg-white border-2 rounded-xl text-left transition-all duration-200 ${
                     matchingLink
-                      ? 'border-amber-200 hover:border-amber-400 hover:shadow-lg hover:scale-[1.01] cursor-pointer'
+                      ? 'border-secondary-green/20 hover:border-secondary-green/60 hover:shadow-lg hover:shadow-secondary-green/5 hover:scale-[1.01] cursor-pointer'
                       : 'border-gray-200 opacity-50 cursor-not-allowed'
                   }`}
                 >
@@ -217,7 +217,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                     {/* Choice number badge */}
                     <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
                       matchingLink
-                        ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-md'
+                        ? 'bg-gradient-to-br from-secondary-green to-secondary-green-dark text-white shadow-md'
                         : 'bg-gray-200 text-gray-400'
                     }`}>
                       {index + 1}
@@ -227,7 +227,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                     <div className="flex-1 min-w-0">
                       <h4 className={`font-semibold text-lg mb-1 ${
                         matchingLink
-                          ? 'text-gray-800 group-hover:text-amber-700'
+                          ? 'text-gray-800 group-hover:text-secondary-green-dark'
                           : 'text-gray-400'
                       }`}>
                         {choice.button || `Option ${index + 1}`}
@@ -244,7 +244,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                     {/* Arrow icon */}
                     <div className={`flex-shrink-0 ${
                       matchingLink
-                        ? 'text-amber-400 group-hover:text-amber-600 group-hover:translate-x-1'
+                        ? 'text-secondary-green group-hover:text-secondary-green-dark group-hover:translate-x-1'
                         : 'text-gray-300'
                     } transition-all duration-200`}>
                       <ChevronRight className="w-6 h-6" />
@@ -264,13 +264,13 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
           {/* Fallback if no branch data but has links */}
           {branchChoices.length === 0 && sortedLinks.length > 0 && (
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-              <div className="p-2 bg-amber-100 rounded-full">
-                <GitFork className="w-5 h-5 text-amber-600" />
+            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-secondary-green/5 to-secondary-green/10 rounded-xl border border-secondary-green/20">
+              <div className="p-2 bg-secondary-green/20 rounded-full">
+                <GitFork className="w-5 h-5 text-secondary-green-dark" />
               </div>
               <div>
-                <p className="font-medium text-amber-800">Decision Point</p>
-                <p className="text-sm text-amber-600">Choose your path below to continue</p>
+                <p className="font-medium text-secondary-green-dark">Decision Point</p>
+                <p className="text-sm text-gray-600">Choose your path below to continue</p>
               </div>
             </div>
           )}
@@ -279,14 +279,14 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Fallback for branch/start passages without branch data */}
       {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length === 0 && (
-        <div className="mt-6 pt-6 border-t border-amber-200">
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-            <div className="p-2 bg-amber-100 rounded-full">
-              <GitFork className="w-5 h-5 text-amber-600" />
+        <div className="mt-6 pt-6 border-t border-secondary-green/20">
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-secondary-green/5 to-secondary-green/10 rounded-xl border border-secondary-green/20">
+            <div className="p-2 bg-secondary-green/20 rounded-full">
+              <GitFork className="w-5 h-5 text-secondary-green-dark" />
             </div>
             <div>
-              <p className="font-medium text-amber-800">Decision Point</p>
-              <p className="text-sm text-amber-600">Choose your path below to continue</p>
+              <p className="font-medium text-secondary-green-dark">Decision Point</p>
+              <p className="text-sm text-gray-600">Choose your path below to continue</p>
             </div>
           </div>
         </div>
