@@ -91,7 +91,7 @@ export const PassagePage: React.FC = () => {
           {/* Story Map Button */}
           <button
             onClick={() => setShowStoryMap(true)}
-            className="absolute top-4 right-4 z-20 w-12 h-12 bg-primary-500/90 hover:bg-primary-500 text-white rounded-full shadow-lg hover:shadow-xl backdrop-blur-sm transition-all duration-200 flex items-center justify-center group"
+            className="absolute top-4 right-4 z-20 w-12 h-12 bg-secondary-green/90 hover:bg-secondary-green text-secondary-green-dark rounded-full shadow-lg hover:shadow-xl backdrop-blur-sm transition-all duration-200 flex items-center justify-center group border border-secondary-green-dark/20"
             title="스토리 맵 보기"
           >
             <MapIcon className="w-6 h-6" />
