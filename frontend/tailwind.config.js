@@ -36,6 +36,7 @@ export default {
           lavender: 'var(--secondary-lavender)',
           pink: 'var(--secondary-pink)',
           green: 'var(--secondary-green)',
+          'green-dark': 'var(--secondary-green-dark)',
         },
         semantic: {
           success: 'var(--success)',

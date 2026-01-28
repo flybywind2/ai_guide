@@ -110,7 +110,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded mb-2 ${
               passage.passage_type === 'start'
-                ? 'bg-green-500/10 text-green-700'
+                ? 'bg-secondary-green/20 text-secondary-green-dark border border-secondary-green/30'
                 : passage.passage_type === 'end'
                 ? 'bg-red-500/10 text-red-700'
                 : passage.passage_type === 'branch'

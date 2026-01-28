@@ -23,9 +23,9 @@
   --neutral-white: #FFFFFF;
   
   /* Gradient */
-  /* Main background gradient: White -> Pink -> Purple */
-  --gradient-main: linear-gradient(180deg, #FFFFFF 0%, #D8B0FF 70%, #6A5EFF 100%);
-  --gradient-card: linear-gradient(135deg, #FFFFFF 0%, #F5EEFF 100%);
+  /* Main background gradient: Very subtle White -> Light Purple */
+  --gradient-main: linear-gradient(180deg, #FFFFFF 0%, #F8F5FF 100%);
+  --gradient-card: linear-gradient(135deg, #FFFFFF 0%, #FAFAFF 100%);
 
   /* Secondary */
   --secondary-purple-1: #875FED;
@@ -34,6 +34,7 @@
   --secondary-lavender: #A48CED;
   --secondary-pink: #D8B0FF;
   --secondary-green: #A2EDB4;
+  --secondary-green-dark: #3EB35C; /* Darker version for text/borders */
 
   /* Semantic */
   --success: #A2EDB4;
@@ -49,8 +50,8 @@
   
   /* Background */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F8F6FF; /* Very light purple tint for solid backgrounds */
-  --bg-tertiary: #F0EBFF;
+  --bg-secondary: #FAFAFF; /* Extremely light purple tint */
+  --bg-tertiary: #F5F3FF;
 }
 
 body {
