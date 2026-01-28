@@ -33,12 +33,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
     (b) => b.story_id === currentStory?.id
   );
 
-  if (leftSidebarCollapsed) {
+    if (leftSidebarCollapsed) {
     return (
-      <aside className="w-[60px] bg-white border-r border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <aside className="w-[60px] glass-panel border-r border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
         <button
           onClick={toggleLeftSidebar}
-          className="p-4 hover:bg-gray-100 transition-colors"
+          className="p-4 hover:bg-white/40 transition-colors"
         >
           <ChevronRight className="w-5 h-5 text-gray-500" />
         </button>
@@ -47,12 +47,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
   }
 
   return (
-    <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col overflow-hidden sticky top-16 h-[calc(100vh-64px)]">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+    <aside className="w-[280px] glass-panel border-r border-white/20 flex flex-col overflow-hidden sticky top-16 h-[calc(100vh-64px)]">
+      <div className="p-4 border-b border-white/20 flex items-center justify-between flex-shrink-0">
         <span className="font-semibold text-gray-900">내비게이션</span>
         <button
           onClick={toggleLeftSidebar}
-          className="p-1 rounded hover:bg-gray-100 transition-colors"
+          className="p-1 rounded hover:bg-white/40 transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-gray-500" />
         </button>
@@ -60,7 +60,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
 
       <div className="flex-1 overflow-y-auto">
         {/* Bookmarks */}
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-white/20">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <Bookmark className="w-4 h-4" />
             <span>북마크</span>
@@ -73,8 +73,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     onClick={() => navigateToPassage(bookmark.passage_id)}
                     className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                       currentPassage?.passage.id === bookmark.passage_id
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'hover:bg-gray-100 text-gray-700'
+                        ? 'bg-primary-500/20 text-primary-700 font-medium'
+                        : 'hover:bg-white/40 text-gray-700'
                     }`}
                   >
                     {bookmark.passage_name || '제목 없음'}
@@ -88,7 +88,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
         </div>
 
         {/* Navigation History */}
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-white/20">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-3">
             <History className="w-4 h-4" />
             <span>히스토리</span>
@@ -101,8 +101,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     onClick={() => navigateToHistoryIndex(index)}
                     className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                       index === currentHistoryIndex
-                        ? 'bg-primary-100 text-primary-700 font-medium'
-                        : 'hover:bg-gray-100 text-gray-700'
+                        ? 'bg-primary-500/20 text-primary-700 font-medium'
+                        : 'hover:bg-white/40 text-gray-700'
                     }`}
                   >
                     <span className="text-gray-400 mr-2">{index + 1}.</span>
@@ -134,8 +134,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
                     }}
                     className={`w-full text-left px-3 py-3 rounded-lg transition-colors ${
                       currentStory?.id === story.id
-                        ? 'bg-primary-100 text-primary-700 font-medium'
-                        : 'hover:bg-gray-100 text-gray-700'
+                        ? 'bg-primary-500/20 text-primary-700 font-medium'
+                        : 'hover:bg-white/40 text-gray-700'
                     }`}
                   >
                     <div className="font-medium text-sm">{story.name}</div>

@@ -106,8 +106,8 @@ export const StorySelectPage: React.FC = () => {
                     onClick={() => handleStartStory(story.id)}
                     className="text-center py-8"
                   >
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
-                      <IconComponent className="w-8 h-8 text-primary-600" />
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center border border-primary-100">
+                      <IconComponent className="w-8 h-8 text-primary-500" />
                     </div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
                       {story.name}

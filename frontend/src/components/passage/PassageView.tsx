@@ -104,18 +104,18 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
   const links = extractLinksFromContent(passage.content || '');
 
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto">
+    <article className="glass-card p-8 max-w-3xl mx-auto">
       <div className="flex items-start justify-between mb-6">
         <div>
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded mb-2 ${
               passage.passage_type === 'start'
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-green-500/10 text-green-700'
                 : passage.passage_type === 'end'
-                ? 'bg-red-100 text-red-700'
+                ? 'bg-red-500/10 text-red-700'
                 : passage.passage_type === 'branch'
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-primary-100 text-primary-700'
+                ? 'bg-yellow-500/10 text-yellow-700'
+                : 'bg-primary-500/10 text-primary-700'
             }`}
           >
             {passage.passage_type}
@@ -126,7 +126,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           {canEdit && !isEditing && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
             <button
               onClick={() => setIsEditing(true)}
-              className="p-2 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
+              className="p-2 rounded-lg hover:bg-primary-500/10 text-primary-600 transition-colors"
               title="Edit passage"
             >
               <Pencil className="w-5 h-5" />
@@ -140,11 +140,11 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
           {isAuthenticated && (
             <button
               onClick={handleBookmark}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-white/40 transition-colors"
               title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
             >
               {isBookmarked ? (
-                <BookmarkCheck className="w-6 h-6 text-primary-600" />
+                <BookmarkCheck className="w-6 h-6 text-primary-500" />
               ) : (
                 <Bookmark className="w-6 h-6 text-gray-400" />
               )}
@@ -294,14 +294,14 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Show inline links if available (not for branch/start passages - they use the nav bar) */}
       {links.length > 0 && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-6 pt-6 border-t border-white/30">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Continue to:</h3>
           <div className="flex flex-wrap gap-2">
             {links.map((link, index) => (
               <button
                 key={index}
                 onClick={() => handleNavigate(link)}
-                className="px-4 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-primary-500/10 text-primary-700 rounded-lg hover:bg-primary-500/20 transition-colors text-sm font-medium"
               >
                 {link}
               </button>
@@ -311,12 +311,12 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
       )}
 
       {passage.tags.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-6 pt-6 border-t border-white/30">
           <div className="flex flex-wrap gap-2">
             {passage.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                className="px-2 py-1 text-xs bg-white/40 text-gray-600 rounded"
               >
                 #{tag}
               </span>
@@ -327,12 +327,12 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Debug: Show current state (can be removed in production) */}
       {Object.keys(twineState.variables).length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-6 pt-6 border-t border-white/30">
           <details className="text-sm text-gray-500">
             <summary className="cursor-pointer hover:text-gray-700">
               Story Variables ({Object.keys(twineState.variables).length})
             </summary>
-            <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto">
+            <pre className="mt-2 p-2 bg-white/40 rounded text-xs overflow-auto">
               {JSON.stringify(twineState.variables, null, 2)}
             </pre>
           </details>

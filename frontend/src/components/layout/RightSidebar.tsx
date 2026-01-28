@@ -48,8 +48,8 @@ const FeedbackItem: React.FC<FeedbackItemProps> = ({
   };
 
   return (
-    <div className={`${depth > 0 ? 'pl-3 border-l-2 border-gray-200' : ''}`}>
-      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+    <div className={`${depth > 0 ? 'pl-3 border-l-2 border-white/30' : ''}`}>
+      <div className="bg-white/40 backdrop-blur-sm border border-white/40 rounded-lg p-3 space-y-2 shadow-sm">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">
             {feedback.is_anonymous ? '익명' : feedback.user_name || '사용자'}
@@ -208,10 +208,10 @@ export const RightSidebar: React.FC = () => {
 
   if (rightSidebarCollapsed) {
     return (
-      <aside className="w-[48px] bg-white border-l border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <aside className="w-[48px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
         <button
           onClick={toggleRightSidebar}
-          className="p-3 hover:bg-gray-100 transition-colors"
+          className="p-3 hover:bg-white/40 transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-gray-500" />
         </button>
@@ -220,20 +220,20 @@ export const RightSidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-[320px] bg-white border-l border-gray-200 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+    <aside className="w-[320px] glass-panel border-l border-white/20 flex flex-col sticky top-16 h-[calc(100vh-64px)]">
+      <div className="p-4 border-b border-white/20 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gray-600" />
           <span className="font-semibold text-gray-900">피드백</span>
           {feedbacks.length > 0 && (
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-primary-500/20 text-primary-700 px-2 py-0.5 rounded-full">
               {feedbacks.length}
             </span>
           )}
         </div>
         <button
           onClick={toggleRightSidebar}
-          className="p-1 rounded hover:bg-gray-100 transition-colors"
+          className="p-1 rounded hover:bg-white/40 transition-colors"
         >
           <ChevronRight className="w-5 h-5 text-gray-500" />
         </button>
@@ -259,7 +259,7 @@ export const RightSidebar: React.FC = () => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="absolute bottom-[72px] left-0 right-0 p-4 border-t border-gray-200 bg-white">
+      <form onSubmit={handleSubmit} className="absolute bottom-[72px] left-0 right-0 p-4 border-t border-white/20 bg-white/60 backdrop-blur-md">
         <textarea
           value={newFeedback}
           onChange={(e) => setNewFeedback(e.target.value)}
@@ -269,7 +269,7 @@ export const RightSidebar: React.FC = () => {
               : '로그인 후 피드백을 남길 수 있습니다'
           }
           disabled={!isAuthenticated}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-primary-500"
+          className="w-full px-3 py-2 border border-white/40 bg-white/50 rounded-lg text-sm resize-none focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           rows={3}
         />
         <div className="flex items-center justify-between mt-2">

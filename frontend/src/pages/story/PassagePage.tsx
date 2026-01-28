@@ -79,7 +79,7 @@ export const PassagePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen main-layout-bg">
       <Header />
 
       <div className="pt-16 flex min-h-screen">
@@ -91,7 +91,7 @@ export const PassagePage: React.FC = () => {
           {/* Story Map Button */}
           <button
             onClick={() => setShowStoryMap(true)}
-            className="absolute top-4 right-4 z-20 w-12 h-12 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+            className="absolute top-4 right-4 z-20 w-12 h-12 bg-primary-500/90 hover:bg-primary-500 text-white rounded-full shadow-lg hover:shadow-xl backdrop-blur-sm transition-all duration-200 flex items-center justify-center group"
             title="스토리 맵 보기"
           >
             <MapIcon className="w-6 h-6" />

@@ -14,7 +14,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
+    <header className="h-16 glass px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
       <Link to="/" className="flex items-center gap-3">
         <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-sm">AI</span>

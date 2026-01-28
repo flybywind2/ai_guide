@@ -11,7 +11,7 @@ export const Layout: React.FC<LayoutProps> = ({
   showSidebars = false,
 }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="main-layout-bg min-h-screen">
       <Header />
       <main className={`pt-16 ${showSidebars ? '' : 'container mx-auto px-4'}`}>
         {children}
