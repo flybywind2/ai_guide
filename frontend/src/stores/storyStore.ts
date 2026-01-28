@@ -106,7 +106,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await api.get('/stories');
-      set({ stories: response.data });
+      set({ stories: Array.isArray(response.data) ? response.data : [] });
+    } catch (error) {
+      console.error('Failed to fetch stories:', error);
+      set({ stories: [] });
     } finally {
       set({ isLoading: false });
     }
