@@ -39,8 +39,10 @@ async def export_passages_csv(
     )
     passages = result.scalars().all()
 
-    # Create CSV in memory
+    # Create CSV in memory with UTF-8 BOM for Excel compatibility
     output = io.StringIO()
+    # Write UTF-8 BOM
+    output.write('\ufeff')
     writer = csv.writer(output)
 
     # Write header
@@ -70,7 +72,7 @@ async def export_passages_csv(
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
-        media_type="text/csv",
+        media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": f"attachment; filename=passages_{story_id}.csv"
         }
@@ -98,8 +100,10 @@ async def export_links_csv(
     )
     links = result.scalars().all()
 
-    # Create CSV in memory
+    # Create CSV in memory with UTF-8 BOM for Excel compatibility
     output = io.StringIO()
+    # Write UTF-8 BOM
+    output.write('\ufeff')
     writer = csv.writer(output)
 
     # Write header
@@ -125,7 +129,7 @@ async def export_links_csv(
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
-        media_type="text/csv",
+        media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": f"attachment; filename=links_{story_id}.csv"
         }
