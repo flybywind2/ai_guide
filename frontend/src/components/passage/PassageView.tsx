@@ -179,21 +179,26 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Show branch choices for branch and start passages */}
       {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length > 0 && (
-        <div className="mt-8 pt-6 border-t-2 border-secondary-green/20">
+        <div className="mt-10 pt-8 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-secondary-green/5 to-transparent rounded-xl -z-10" />
+          
           {/* Branch header */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-secondary-green/40" />
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-secondary-green/10 to-secondary-green/20 rounded-full border border-secondary-green/20">
-              <GitFork className="w-5 h-5 text-secondary-green-dark" />
-              <span className="text-sm font-semibold text-secondary-green-dark uppercase tracking-wide">
-                Choose Your Path
-              </span>
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-secondary-green" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-secondary-green/30 blur-lg rounded-full animate-pulse" />
+              <div className="relative flex items-center gap-3 px-6 py-3 bg-white border-2 border-secondary-green rounded-full shadow-[0_0_15px_rgba(162,237,180,0.4)]">
+                <GitFork className="w-6 h-6 text-secondary-green-dark" />
+                <span className="text-base font-bold bg-gradient-to-r from-secondary-green-dark to-primary-main bg-clip-text text-transparent uppercase tracking-wider">
+                  운명의 갈림길
+                </span>
+              </div>
             </div>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-secondary-green/40" />
+            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-secondary-green" />
           </div>
 
           {/* Branch choices */}
-          <div className="space-y-3">
+          <div className="grid gap-4">
             {branchChoices.map((choice, index) => {
               const matchingLink = sortedLinks[index];
               const handleClick = () => {
@@ -207,17 +212,20 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                   key={index}
                   onClick={handleClick}
                   disabled={!matchingLink}
-                  className={`w-full group relative p-5 bg-white border-2 rounded-xl text-left transition-all duration-200 ${
+                  className={`w-full group relative p-6 bg-white/80 backdrop-blur-sm border-2 rounded-2xl text-left transition-all duration-300 ${
                     matchingLink
-                      ? 'border-secondary-green/20 hover:border-secondary-green/60 hover:shadow-lg hover:shadow-secondary-green/5 hover:scale-[1.01] cursor-pointer'
-                      : 'border-gray-200 opacity-50 cursor-not-allowed'
+                      ? 'border-secondary-green/40 hover:border-secondary-green hover:shadow-[0_8px_30px_rgba(162,237,180,0.3)] hover:-translate-y-1 cursor-pointer'
+                      : 'border-gray-200 opacity-50 cursor-not-allowed bg-gray-50'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
+                  {/* Background Gradient on Hover */}
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r from-secondary-green/10 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
+
+                  <div className="relative flex items-center gap-5">
                     {/* Choice number badge */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                    <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl transform transition-transform duration-300 group-hover:rotate-6 ${
                       matchingLink
-                        ? 'bg-gradient-to-br from-secondary-green to-secondary-green-dark text-white shadow-md'
+                        ? 'bg-gradient-to-br from-[#A2EDB4] to-[#3EB35C] text-white shadow-md group-hover:shadow-lg'
                         : 'bg-gray-200 text-gray-400'
                     }`}>
                       {index + 1}
@@ -225,16 +233,16 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
                     {/* Choice content */}
                     <div className="flex-1 min-w-0">
-                      <h4 className={`font-semibold text-lg mb-1 ${
+                      <h4 className={`font-bold text-xl mb-2 transition-colors duration-200 ${
                         matchingLink
                           ? 'text-gray-800 group-hover:text-secondary-green-dark'
                           : 'text-gray-400'
                       }`}>
-                        {choice.button || `Option ${index + 1}`}
+                        {choice.button || `선택지 ${index + 1}`}
                       </h4>
                       {choice.description && (
-                        <p className={`text-sm ${
-                          matchingLink ? 'text-gray-500' : 'text-gray-400'
+                        <p className={`text-base leading-relaxed ${
+                          matchingLink ? 'text-gray-600 group-hover:text-gray-800' : 'text-gray-400'
                         }`}>
                           {choice.description}
                         </p>
@@ -242,19 +250,20 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                     </div>
 
                     {/* Arrow icon */}
-                    <div className={`flex-shrink-0 ${
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                       matchingLink
-                        ? 'text-secondary-green group-hover:text-secondary-green-dark group-hover:translate-x-1'
-                        : 'text-gray-300'
-                    } transition-all duration-200`}>
+                        ? 'bg-secondary-green/20 text-secondary-green-dark group-hover:bg-secondary-green group-hover:text-white group-hover:translate-x-2'
+                        : 'bg-gray-100 text-gray-300'
+                    }`}>
                       <ChevronRight className="w-6 h-6" />
                     </div>
                   </div>
 
                   {/* Not connected warning */}
                   {!matchingLink && (
-                    <div className="mt-2 text-xs text-red-500">
-                      ⚠ Not connected to a passage
+                    <div className="mt-3 text-xs text-red-500 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      연결된 다음 이야기가 없습니다
                     </div>
                   )}
                 </button>
@@ -264,13 +273,13 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
           {/* Fallback if no branch data but has links */}
           {branchChoices.length === 0 && sortedLinks.length > 0 && (
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-secondary-green/5 to-secondary-green/10 rounded-xl border border-secondary-green/20">
-              <div className="p-2 bg-secondary-green/20 rounded-full">
-                <GitFork className="w-5 h-5 text-secondary-green-dark" />
+            <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-secondary-green/10 to-transparent rounded-2xl border border-secondary-green/30 mt-4">
+              <div className="p-3 bg-white rounded-full shadow-sm border border-secondary-green/20">
+                <GitFork className="w-6 h-6 text-secondary-green-dark" />
               </div>
               <div>
-                <p className="font-medium text-secondary-green-dark">Decision Point</p>
-                <p className="text-sm text-gray-600">Choose your path below to continue</p>
+                <p className="font-bold text-lg text-secondary-green-dark mb-1">다음 이야기 선택</p>
+                <p className="text-gray-600">아래 버튼을 눌러 이야기를 계속 진행하세요.</p>
               </div>
             </div>
           )}

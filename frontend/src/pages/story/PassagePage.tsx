@@ -91,11 +91,11 @@ export const PassagePage: React.FC = () => {
           {/* Story Map Button */}
           <button
             onClick={() => setShowStoryMap(true)}
-            className="absolute top-4 right-4 z-20 w-12 h-12 bg-secondary-green/90 hover:bg-secondary-green text-secondary-green-dark rounded-full shadow-lg hover:shadow-xl backdrop-blur-sm transition-all duration-200 flex items-center justify-center group border border-secondary-green-dark/20"
+            className="absolute top-4 right-4 z-20 w-14 h-14 bg-gradient-to-br from-[#A2EDB4] to-[#3EB35C] text-white rounded-full shadow-[0_0_15px_rgba(162,237,180,0.5)] hover:shadow-[0_0_25px_rgba(162,237,180,0.8)] hover:scale-110 transition-all duration-300 flex items-center justify-center group border-2 border-white/50"
             title="스토리 맵 보기"
           >
-            <MapIcon className="w-6 h-6" />
-            <span className="absolute top-full mt-2 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            <MapIcon className="w-7 h-7 drop-shadow-md" />
+            <span className="absolute top-full mt-2 right-0 bg-gray-900/90 backdrop-blur text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-[-10px] group-hover:translate-y-0 whitespace-nowrap shadow-xl">
               스토리 맵
             </span>
           </button>
