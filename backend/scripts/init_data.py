@@ -57,6 +57,7 @@ async def create_sample_data():
         # Create passages for Story 1
         p1_start = Passage(
             story_id=story1.id,
+            passage_number=1,
             name="시작",
             content="""
 <h2>AI 서비스 활용 가이드에 오신 것을 환영합니다!</h2>
@@ -72,6 +73,7 @@ async def create_sample_data():
 
         p1_service = Passage(
             story_id=story1.id,
+            passage_number=2,
             name="사내 AI 서비스 소개",
             content="""
 <h2>사내 AI 서비스 소개</h2>
@@ -91,6 +93,7 @@ async def create_sample_data():
 
         p1_setup = Passage(
             story_id=story1.id,
+            passage_number=3,
             name="환경 구축 가이드",
             content="""
 <h2>환경 구축 가이드</h2>
@@ -111,6 +114,7 @@ async def create_sample_data():
 
         p1_end = Passage(
             story_id=story1.id,
+            passage_number=4,
             name="가이드 완료",
             content="""
 <h2>축하합니다!</h2>
@@ -183,6 +187,7 @@ async def create_sample_data():
         # Create passages for Story 2
         p2_start = Passage(
             story_id=story2.id,
+            passage_number=1,
             name="시작",
             content="""
 <h2>AI 개발 가이드에 오신 것을 환영합니다!</h2>
@@ -198,6 +203,7 @@ async def create_sample_data():
 
         p2_resource = Passage(
             story_id=story2.id,
+            passage_number=2,
             name="자원 신청 가이드",
             content="""
 <h2>AI 개발 자원 신청</h2>
@@ -223,6 +229,7 @@ async def create_sample_data():
 
         p2_ml = Passage(
             story_id=story2.id,
+            passage_number=3,
             name="ML/DL 개발 가이드",
             content="""
 <h2>ML/DL 모델 개발 가이드</h2>
@@ -245,6 +252,7 @@ async def create_sample_data():
 
         p2_end = Passage(
             story_id=story2.id,
+            passage_number=4,
             name="가이드 완료",
             content="""
 <h2>축하합니다!</h2>

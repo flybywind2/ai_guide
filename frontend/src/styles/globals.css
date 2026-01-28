@@ -10,6 +10,45 @@
   --sidebar-right-width: 320px;
   --sidebar-right-collapsed: 48px;
   --footer-nav-height: 72px;
+
+  /* Primary */
+  --primary-main: #5325BA;
+  --primary-light: #875FED;
+  --primary-dark: #3D1A8C;
+  
+  /* Neutral */
+  --neutral-light: #E0E0E0;
+  --neutral-dark: #121011;
+  --neutral-white: #FFFFFF;
+  
+  /* Gradient */
+  --gradient-main: linear-gradient(180deg, #FFFFFF 0%, #D8B0FF 70%, #6A5EFF 100%);
+  --gradient-card: linear-gradient(135deg, #FFFFFF 0%, #F5EEFF 100%);
+
+  /* Secondary */
+  --secondary-purple-1: #875FED;
+  --secondary-purple-2: #6A5EFF;
+  --secondary-blue: #A1BDF8;
+  --secondary-lavender: #A48CED;
+  --secondary-pink: #D8B0FF;
+  --secondary-green: #A2EDB4;
+
+  /* Semantic */
+  --success: #A2EDB4;
+  --warning: #FFD166;
+  --error: #EF476F;
+  --info: #A1BDF8;
+  
+  /* Text */
+  --text-primary: #121011;
+  --text-secondary: #5A5A5A;
+  --text-disabled: #9E9E9E;
+  --text-inverse: #FFFFFF;
+  
+  /* Background */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8F6FF;
+  --bg-tertiary: #F0EBFF;
 }
 
 body {
