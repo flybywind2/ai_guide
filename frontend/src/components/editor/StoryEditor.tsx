@@ -20,9 +20,11 @@ import { Button } from '../common';
 import { Plus, Save, X, Code, FileText, Play, Trash2, Maximize2, Minimize2, HelpCircle, Download, Upload } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { PassageCodeEditor } from './PassageCodeEditor';
+import { TwinePassageRenderer } from '../reader/TwinePassageRenderer';
 import { MacroGuideModal } from './MacroGuideModal';
 import { BranchNode } from './BranchNode';
 import { extractVariables, extractPassageRefs, PassageRef } from './twine-syntax';
+import { createInitialState } from '../../utils/twine-runtime';
 import { parseBranchData, serializeBranchData, createDefaultBranchData, generateUniqueId, BranchChoice } from '../../utils/branch-utils';
 
 const nodeTypes = {
@@ -33,7 +35,7 @@ interface StoryEditorProps {
   storyId: string;
 }
 
-type EditorMode = 'code' | 'wysiwyg';
+type EditorMode = 'code' | 'text' | 'visual';
 
 // Panel width constants
 const MIN_PANEL_WIDTH = 400;
@@ -1117,7 +1119,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [passageType, setPassageType] = useState(passage.passage_type);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [editorMode, setEditorMode] = useState<EditorMode>('wysiwyg');
+  const [editorMode, setEditorMode] = useState<EditorMode>('text');
   const [linkedPassages, setLinkedPassages] = useState<PassageRef[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1433,14 +1435,26 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setEditorMode('wysiwyg')}
+                onClick={() => setEditorMode('text')}
                 className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
-                  editorMode === 'wysiwyg'
+                  editorMode === 'text'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <FileText className="w-3 h-3" />
+                Text
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorMode('visual')}
+                className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${
+                  editorMode === 'visual'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Play className="w-3 h-3" />
                 Visual
               </button>
             </div>
@@ -1463,12 +1477,24 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
             variables={storyVariables}
             placeholder="Enter passage content with Twine-style macros..."
           />
-        ) : (
+        ) : editorMode === 'text' ? (
           <TipTapEditor
             content={rawContent}
             onChange={setRawContent}
             onImageUpload={handleImageUpload}
           />
+        ) : (
+          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white p-6 max-h-[400px] overflow-y-auto">
+            <div className="passage-content">
+              <TwinePassageRenderer
+                content={rawContent}
+                state={createInitialState()}
+                onStateChange={() => {}}
+                onNavigate={() => {}}
+                passages={otherPassages}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -1492,14 +1518,26 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditorMode('wysiwyg')}
+                  onClick={() => setEditorMode('text')}
                   className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
-                    editorMode === 'wysiwyg'
+                    editorMode === 'text'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <FileText className="w-4 h-4" />
+                  Text
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('visual')}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    editorMode === 'visual'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
                   Visual
                 </button>
               </div>
@@ -1528,13 +1566,25 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                   placeholder="Enter passage content with Twine-style macros..."
                 />
               </div>
-            ) : (
+            ) : editorMode === 'text' ? (
               <div className="h-full [&>div]:h-full [&_.ProseMirror]:min-h-[calc(100vh-200px)]">
                 <TipTapEditor
                   content={rawContent}
                   onChange={setRawContent}
                   onImageUpload={handleImageUpload}
                 />
+              </div>
+            ) : (
+              <div className="h-full bg-white rounded-lg border border-gray-200 p-8 overflow-auto">
+                <div className="passage-content">
+                  <TwinePassageRenderer
+                    content={rawContent}
+                    state={createInitialState()}
+                    onStateChange={() => {}}
+                    onNavigate={() => {}}
+                    passages={otherPassages}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -1597,8 +1647,7 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Description</label>
-                    <input
-                      type="text"
+                    <textarea
                       value={choice.description}
                       onChange={(e) => {
                         const newChoices = branchChoices.map((c) =>
@@ -1607,7 +1656,8 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
                         setBranchChoices(newChoices);
                       }}
                       placeholder="Enter description..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-y"
                     />
                   </div>
                 </div>

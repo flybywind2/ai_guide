@@ -95,21 +95,25 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = () => {
           </div>
           {navigationHistoryWithNames.length > 0 ? (
             <ul className="space-y-1">
-              {navigationHistoryWithNames.map((entry, index) => (
-                <li key={`${entry.id}-${index}`}>
-                  <button
-                    onClick={() => navigateToHistoryIndex(index)}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                      index === currentHistoryIndex
-                        ? 'bg-primary-100 text-primary-700 font-medium'
-                        : 'hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <span className="text-gray-400 mr-2">{index + 1}.</span>
-                    {entry.name || '제목 없음'}
-                  </button>
-                </li>
-              ))}
+              {navigationHistoryWithNames.slice(-10).map((entry, index) => {
+                const startIndex = Math.max(0, navigationHistoryWithNames.length - 10);
+                const actualIndex = startIndex + index;
+                return (
+                  <li key={`${entry.id}-${index}`}>
+                    <button
+                      onClick={() => navigateToHistoryIndex(actualIndex)}
+                      className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                        actualIndex === currentHistoryIndex
+                          ? 'bg-primary-100 text-primary-700 font-medium'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <span className="text-gray-400 mr-2">{index + 1}.</span>
+                      {entry.name || '제목 없음'}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-sm text-gray-400">아직 히스토리가 없습니다</p>

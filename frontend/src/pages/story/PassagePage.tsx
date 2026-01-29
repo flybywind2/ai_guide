@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStoryStore } from '../../stores/storyStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useUIStore } from '../../stores/uiStore';
 import { Header } from '../../components/layout/Header';
 import { LeftSidebar } from '../../components/layout/LeftSidebar';
 import { RightSidebar } from '../../components/layout/RightSidebar';
@@ -16,7 +17,13 @@ export const PassagePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { currentPassage, currentStory, fetchBookmarks, isLoading, loadPassageById, loadPassageByNumber } = useStoryStore();
   const { isAuthenticated } = useAuthStore();
+  const { leftSidebarCollapsed, rightSidebarCollapsed } = useUIStore();
   const [showStoryMap, setShowStoryMap] = useState(false);
+
+  // Calculate responsive max-width based on sidebar state
+  const bothCollapsed = leftSidebarCollapsed && rightSidebarCollapsed;
+  const oneCollapsed = leftSidebarCollapsed !== rightSidebarCollapsed;
+  const maxWidthClass = bothCollapsed ? 'max-w-6xl' : oneCollapsed ? 'max-w-5xl' : 'max-w-4xl';
 
   useEffect(() => {
     // Check if passage_number query param exists
@@ -126,7 +133,9 @@ export const PassagePage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <PassageView context={currentPassage} />
+              <div className={`mx-auto ${maxWidthClass}`}>
+                <PassageView context={currentPassage} />
+              </div>
             )}
           </div>
         </main>

@@ -340,9 +340,6 @@ export function processPassageContent(
   // Process conditionals
   html = processConditionals(html, newState);
 
-  // Convert newlines to breaks
-  html = html.replace(/\n/g, '<br>');
-
   return { html, state: newState };
 }
 

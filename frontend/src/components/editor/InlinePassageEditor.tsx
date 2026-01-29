@@ -18,7 +18,6 @@ import {
   Undo,
   Redo,
   Link as LinkIcon,
-  Image as ImageIcon,
   Heading1,
   Heading2,
   Heading3,
@@ -44,7 +43,7 @@ interface InlinePassageEditorProps {
 }
 
 // 클래스명을 컴포넌트 외부에 상수로 정의
-const EDITOR_CLASS_NAME = "prose prose-sm max-w-none p-4 min-h-[200px] max-h-[50vh] overflow-y-auto focus:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:my-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h2]:my-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-gray-300 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:bg-gray-100 [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:rounded [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:text-white [&_.ProseMirror_pre]:p-4 [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_hr]:my-4 [&_.ProseMirror_hr]:border-gray-300 [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:my-4 [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-gray-300 [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-gray-300 [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-gray-100 [&_.ProseMirror_th]:font-semibold [&_.ProseMirror_.selectedCell]:bg-blue-100";
+const EDITOR_CLASS_NAME = "passage-content max-w-none p-4 min-h-[200px] max-h-[50vh] overflow-y-auto focus:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:outline-none";
 
 // ToolbarButton을 컴포넌트 외부로 이동
 const ToolbarButton: React.FC<{
@@ -77,18 +76,13 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
-  const handleImageUploadInternal = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post('/admin/upload/image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data.url;
-  };
-
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        hardBreak: {
+          keepMarks: true,
+        },
+      }),
       Image.configure({
         HTMLAttributes: {
           class: 'rounded-lg max-w-full',
@@ -121,54 +115,6 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
     content: initialContent,
     editable: true,
     autofocus: 'end',
-    editorProps: {
-      handlePaste: (view, event) => {
-        const items = event.clipboardData?.items;
-        if (!items) return false;
-
-        for (const item of items) {
-          if (item.type.startsWith('image/')) {
-            event.preventDefault();
-            const file = item.getAsFile();
-            if (file) {
-              handleImageUploadInternal(file).then((url) => {
-                const { state } = view;
-                const { tr } = state;
-                const pos = state.selection.from;
-                const node = state.schema.nodes.image.create({ src: url });
-                view.dispatch(tr.insert(pos, node));
-              }).catch((error) => {
-                console.error('Failed to upload pasted image:', error);
-              });
-            }
-            return true;
-          }
-        }
-        return false;
-      },
-      handleDrop: (view, event) => {
-        const files = event.dataTransfer?.files;
-        if (!files || files.length === 0) return false;
-
-        for (const file of files) {
-          if (file.type.startsWith('image/')) {
-            event.preventDefault();
-            handleImageUploadInternal(file).then((url) => {
-              const { state } = view;
-              const { tr } = state;
-              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-              const pos = coordinates?.pos ?? state.selection.from;
-              const node = state.schema.nodes.image.create({ src: url });
-              view.dispatch(tr.insert(pos, node));
-            }).catch((error) => {
-              console.error('Failed to upload dropped image:', error);
-            });
-            return true;
-          }
-        }
-        return false;
-      },
-    },
   });
 
   // Handle ESC key to exit maximize mode or cancel editing
@@ -200,28 +146,6 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleImageUpload = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && editor) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await api.post('/admin/upload/image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-          editor.chain().focus().setImage({ src: response.data.url }).run();
-        } catch (error) {
-          console.error('Failed to upload image:', error);
-        }
-      }
-    };
-    input.click();
   };
 
   const setLink = () => {
@@ -343,10 +267,6 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
         title="Add Link"
       >
         <LinkIcon className="w-4 h-4" />
-      </ToolbarButton>
-
-      <ToolbarButton onClick={handleImageUpload} title="Add Image">
-        <ImageIcon className="w-4 h-4" />
       </ToolbarButton>
 
       <div className="w-px h-5 bg-gray-300 mx-1" />

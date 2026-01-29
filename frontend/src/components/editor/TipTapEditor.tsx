@@ -11,6 +11,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
+import Gapcursor from '@tiptap/extension-gapcursor';
 
 // Custom Image Extension with size and alignment support
 const CustomImage = Image.extend({
@@ -200,6 +201,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
       }),
       TextStyle,
       Color,
+      Gapcursor,
     ],
     content: '',
     onUpdate: ({ editor }) => {
@@ -216,6 +218,15 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
       onChange(formattedHTML);
     },
     editorProps: {
+      attributes: {
+        class: 'passage-content focus:outline-none min-h-[300px] p-4',
+      },
+      handleDOMEvents: {
+        blur: () => {
+          // Prevent cursor jumping on blur
+          return false;
+        },
+      },
       handlePaste: (view, event) => {
         // Check clipboard items for images
         const clipboardData = event.clipboardData;
@@ -895,7 +906,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
         )}
         <EditorContent
           editor={editor}
-          className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none [&_.ProseMirror]:min-h-[280px] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:my-3 [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h2]:my-2 [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_h3]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-gray-300 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_code]:bg-gray-100 [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:rounded [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:text-white [&_.ProseMirror_pre]:p-4 [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_hr]:my-4 [&_.ProseMirror_hr]:border-gray-300 [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:my-4 [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-gray-300 [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-gray-300 [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-gray-100 [&_.ProseMirror_th]:font-semibold [&_.ProseMirror_.selectedCell]:bg-blue-100 [&_.ProseMirror_mark]:rounded [&_.ProseMirror_a]:text-primary-600 [&_.ProseMirror_a]:underline"
+          className="passage-content focus:outline-none [&_.ProseMirror]:min-h-[280px] [&_.ProseMirror]:outline-none"
         />
       </div>
 

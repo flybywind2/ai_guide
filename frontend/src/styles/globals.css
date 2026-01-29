@@ -102,12 +102,20 @@ body {
 
 /* Paragraphs */
 .passage-content p {
-  @apply text-gray-700 mb-5;
+  @apply text-gray-700 mb-3;
   line-height: 1.8;
 }
 
 .passage-content p:first-of-type {
   @apply text-lg text-gray-600;
+}
+
+/* Remove top margin for paragraphs directly after headings */
+.passage-content h1 + p,
+.passage-content h2 + p,
+.passage-content h3 + p,
+.passage-content h4 + p {
+  margin-top: 0;
 }
 
 /* Lists with custom styling */
@@ -211,7 +219,7 @@ body {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.passage-content img:hover {
+.passage-content a img:hover {
   transform: scale(1.01);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 6px 16px rgba(0, 0, 0, 0.1);
 }

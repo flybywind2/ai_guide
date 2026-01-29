@@ -136,7 +136,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
   const TypeIcon = typeConfig.icon;
 
   return (
-    <article className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-w-3xl mx-auto transition-all duration-300 hover:shadow-xl">
+    <article className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-w-4xl mx-auto transition-all duration-300 hover:shadow-xl">
       {/* Header with gradient accent */}
       <div className="relative">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500" />
