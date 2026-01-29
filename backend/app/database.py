@@ -1,11 +1,14 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 import os
+from pathlib import Path
 
-DATABASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-os.makedirs(DATABASE_DIR, exist_ok=True)
+# 절대경로 사용 - .env 무시
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATABASE_DIR = PROJECT_ROOT / "backend" / "data"
+DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
-DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_DIR}/app.db"
+DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_DIR.absolute()}/app.db"
 
 engine = create_async_engine(
     DATABASE_URL,
