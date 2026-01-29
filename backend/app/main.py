@@ -46,7 +46,7 @@ app.include_router(admin_csv.router, prefix="/api/admin")
 
 @app.get("/")
 async def root():
-    return {"message": "AI Literacy Workflow Guide API"}
+    return {"message": "AI 활용 가이드 API"}
 
 @app.get("/health")
 async def health():

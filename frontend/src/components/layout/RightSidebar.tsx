@@ -201,7 +201,7 @@ export const RightSidebar: React.FC = () => {
   };
 
   const handleDelete = async (feedbackId: string) => {
-    if (!confirm('이 피드백을 삭제하시겠습니까?')) return;
+    if (!confirm('이 게시글을 삭제하시겠습니까?')) return;
     await api.delete(`/feedback/${feedbackId}`);
     fetchFeedbacks();
   };
@@ -224,7 +224,7 @@ export const RightSidebar: React.FC = () => {
       <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gray-600" />
-          <span className="font-semibold text-gray-900">피드백</span>
+          <span className="font-semibold text-gray-900">게시판</span>
           {feedbacks.length > 0 && (
             <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
               {feedbacks.length}
@@ -254,7 +254,7 @@ export const RightSidebar: React.FC = () => {
           ))
         ) : (
           <p className="text-sm text-gray-400 text-center py-4">
-            아직 피드백이 없습니다. 첫 피드백을 남겨보세요!
+            아직 게시글이 없습니다. 첫 게시글을 남겨보세요!
           </p>
         )}
       </div>
@@ -265,8 +265,8 @@ export const RightSidebar: React.FC = () => {
           onChange={(e) => setNewFeedback(e.target.value)}
           placeholder={
             isAuthenticated
-              ? '피드백을 입력하세요...'
-              : '로그인 후 피드백을 남길 수 있습니다'
+              ? '게시글을 입력하세요...'
+              : '로그인 후 게시글을 남길 수 있습니다'
           }
           disabled={!isAuthenticated}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-primary-500"

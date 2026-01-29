@@ -1,4 +1,4 @@
-# AI Literacy Workflow Guide
+# AI 활용 가이드
 
 Twine 스타일의 인터랙티브 AI 학습 가이드 시스템
 

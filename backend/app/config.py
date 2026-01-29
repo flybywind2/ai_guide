@@ -3,7 +3,7 @@ from functools import lru_cache
 import os
 
 class Settings(BaseSettings):
-    APP_NAME: str = "AI Literacy Workflow Guide"
+    APP_NAME: str = "AI 활용 가이드"
     DEBUG: bool = True
 
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"

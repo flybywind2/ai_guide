@@ -142,7 +142,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleDeleteFeedback = async (feedbackId: string) => {
-    if (!confirm('Are you sure you want to delete this feedback?')) return;
+    if (!confirm('이 게시글을 삭제하시겠습니까?')) return;
     try {
       await api.delete(`/feedback/${feedbackId}`);
       fetchFeedbacks();
@@ -379,7 +379,7 @@ export const AdminDashboard: React.FC = () => {
                 <p className="text-xl font-bold text-gray-900">
                   {stats?.total_feedbacks || 0}
                 </p>
-                <p className="text-xs text-gray-500">Feedbacks</p>
+                <p className="text-xs text-gray-500">게시판</p>
               </div>
             </div>
           </Card>
@@ -590,7 +590,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-semibold">Feedback</h2>
+              <h2 className="text-xl font-semibold">게시판</h2>
               <span className="text-sm text-gray-500">({feedbacks.length})</span>
             </div>
             <select
@@ -745,7 +745,7 @@ export const AdminDashboard: React.FC = () => {
 
             {feedbacks.length === 0 && (
               <p className="text-center text-gray-500 py-8">
-                No feedback yet.
+                아직 게시글이 없습니다.
               </p>
             )}
           </div>

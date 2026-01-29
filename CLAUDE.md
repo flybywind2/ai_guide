@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI Literacy Workflow Guide - A Twine-style interactive guide system for Samsung DS employees to learn AI utilization and development paths. Built with React frontend and FastAPI backend using SQLite3 database.
+AI 활용 가이드 - A Twine-style interactive guide system for Samsung DS employees to learn AI utilization and development paths. Built with React frontend and FastAPI backend using SQLite3 database.
 
 ## Tech Stack
 

@@ -1,4 +1,4 @@
-"""Initialize sample data for the AI Literacy Guide"""
+"""Initialize sample data for the AI 활용 가이드"""
 import asyncio
 import sys
 import os

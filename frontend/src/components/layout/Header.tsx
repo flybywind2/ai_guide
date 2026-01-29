@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
           <span className="text-white font-bold text-sm">AI</span>
         </div>
         <span className="font-semibold text-gray-900 text-lg">
-          AI Literacy Guide
+          AI 활용 가이드
         </span>
       </Link>
 
