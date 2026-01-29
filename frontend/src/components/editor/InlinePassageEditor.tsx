@@ -7,6 +7,7 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
+import Gapcursor from '@tiptap/extension-gapcursor';
 import {
   Bold,
   Italic,
@@ -41,6 +42,39 @@ interface InlinePassageEditorProps {
   onSave: (content: string) => void;
   onCancel: () => void;
 }
+
+// Custom Inline Image Extension
+const CustomInlineImage = Image.extend({
+  inline: true,
+  group: 'inline',
+
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: element => element.getAttribute('width') || element.style.width,
+        renderHTML: attributes => {
+          if (!attributes.width) return {};
+          return { width: attributes.width };
+        },
+      },
+      align: {
+        default: 'baseline',
+        parseHTML: element => {
+          const verticalAlign = element.style.verticalAlign;
+          return verticalAlign || 'baseline';
+        },
+        renderHTML: attributes => {
+          const align = attributes.align || 'baseline';
+          return {
+            style: `vertical-align: ${align}; margin: 0 0.25rem;`,
+          };
+        },
+      },
+    };
+  },
+});
 
 // 클래스명을 컴포넌트 외부에 상수로 정의
 const EDITOR_CLASS_NAME = "passage-content max-w-none p-4 min-h-[200px] max-h-[50vh] overflow-y-auto focus:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:outline-none";
@@ -83,7 +117,7 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
           keepMarks: true,
         },
       }),
-      Image.configure({
+      CustomInlineImage.configure({
         HTMLAttributes: {
           class: 'rounded-lg max-w-full',
         },
@@ -111,6 +145,7 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
           class: 'border border-gray-300 p-2',
         },
       }),
+      Gapcursor,
     ],
     content: initialContent,
     editable: true,

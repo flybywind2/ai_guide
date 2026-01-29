@@ -13,8 +13,11 @@ import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
 import Gapcursor from '@tiptap/extension-gapcursor';
 
-// Custom Image Extension with size and alignment support
+// Custom Image Extension with inline behavior and size support
 const CustomImage = Image.extend({
+  inline: true,
+  group: 'inline',
+
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -27,30 +30,16 @@ const CustomImage = Image.extend({
         },
       },
       align: {
-        default: 'left',
+        default: 'baseline',
         parseHTML: element => {
-          const float = element.style.float;
-          const display = element.style.display;
-          const margin = element.style.margin;
-          if (display === 'block' && margin === '0px auto') return 'center';
-          if (float === 'right') return 'right';
-          return 'left';
+          const verticalAlign = element.style.verticalAlign;
+          return verticalAlign || 'baseline';
         },
         renderHTML: attributes => {
-          const align = attributes.align || 'left';
-          if (align === 'center') {
-            return {
-              style: 'display: block; margin: 0 auto;',
-            };
-          } else if (align === 'right') {
-            return {
-              style: 'float: right; margin-left: 1rem;',
-            };
-          } else {
-            return {
-              style: 'float: left; margin-right: 1rem;',
-            };
-          }
+          const align = attributes.align || 'baseline';
+          return {
+            style: `vertical-align: ${align}; margin: 0 0.25rem;`,
+          };
         },
       },
     };
@@ -155,7 +144,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [imageWidth, setImageWidth] = useState('50%');
-  const [imageAlign, setImageAlign] = useState<'left' | 'center' | 'right'>('left');
+  const [imageAlign, setImageAlign] = useState<'baseline' | 'middle' | 'top' | 'bottom'>('baseline');
 
   const editor = useEditor({
     extensions: [
@@ -350,7 +339,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             const url = await onImageUpload(file);
             setImageUrl(url);
             setImageWidth('50%');
-            setImageAlign('left');
+            setImageAlign('baseline');
             setShowImageModal(true);
           } catch (error) {
             console.error('Failed to upload image:', error);
@@ -363,7 +352,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     } else {
       setImageUrl('');
       setImageWidth('50%');
-      setImageAlign('left');
+      setImageAlign('baseline');
       setShowImageModal(true);
     }
   };
@@ -384,7 +373,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     setShowImageModal(false);
     setImageUrl('');
     setImageWidth('50%');
-    setImageAlign('left');
+    setImageAlign('baseline');
   }, [editor, imageUrl, imageWidth, imageAlign]);
 
   const updateImageSize = useCallback((size: string) => {
@@ -392,7 +381,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     editor.chain().focus().updateAttributes('image', { width: size }).run();
   }, [editor]);
 
-  const updateImageAlign = useCallback((align: 'left' | 'center' | 'right') => {
+  const updateImageAlign = useCallback((align: 'baseline' | 'middle' | 'top' | 'bottom') => {
     if (!editor) return;
     editor.chain().focus().updateAttributes('image', { align }).run();
   }, [editor]);
@@ -759,27 +748,35 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
             <ToolbarGroup label="이미지 정렬">
               <ToolbarButton
-                onClick={() => updateImageAlign('left')}
-                isActive={editor.getAttributes('image').align === 'left'}
-                title="왼쪽 정렬"
+                onClick={() => updateImageAlign('baseline')}
+                isActive={editor.getAttributes('image').align === 'baseline'}
+                title="기본 정렬"
               >
-                <AlignLeft className="w-4 h-4" />
+                <span className="text-xs font-medium">기본</span>
               </ToolbarButton>
 
               <ToolbarButton
-                onClick={() => updateImageAlign('center')}
-                isActive={editor.getAttributes('image').align === 'center'}
-                title="가운데 정렬"
+                onClick={() => updateImageAlign('middle')}
+                isActive={editor.getAttributes('image').align === 'middle'}
+                title="중간 정렬"
               >
-                <AlignCenter className="w-4 h-4" />
+                <span className="text-xs font-medium">중간</span>
               </ToolbarButton>
 
               <ToolbarButton
-                onClick={() => updateImageAlign('right')}
-                isActive={editor.getAttributes('image').align === 'right'}
-                title="오른쪽 정렬"
+                onClick={() => updateImageAlign('top')}
+                isActive={editor.getAttributes('image').align === 'top'}
+                title="위 정렬"
               >
-                <AlignRight className="w-4 h-4" />
+                <span className="text-xs font-medium">위</span>
+              </ToolbarButton>
+
+              <ToolbarButton
+                onClick={() => updateImageAlign('bottom')}
+                isActive={editor.getAttributes('image').align === 'bottom'}
+                title="아래 정렬"
+              >
+                <span className="text-xs font-medium">아래</span>
               </ToolbarButton>
             </ToolbarGroup>
 
@@ -1063,50 +1060,60 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  정렬
+                  수직 정렬
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setImageAlign('left')}
+                    onClick={() => setImageAlign('baseline')}
                     className={`
-                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
-                      ${imageAlign === 'left'
+                      px-3 py-2 rounded-lg border transition-all text-center
+                      ${imageAlign === 'baseline'
                         ? 'bg-primary-100 border-primary-500 text-primary-700'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }
                     `}
                   >
-                    <AlignLeft className="w-4 h-4" />
-                    <span className="text-sm font-medium">왼쪽</span>
+                    <span className="text-sm font-medium">기본</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setImageAlign('center')}
+                    onClick={() => setImageAlign('middle')}
                     className={`
-                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
-                      ${imageAlign === 'center'
+                      px-3 py-2 rounded-lg border transition-all text-center
+                      ${imageAlign === 'middle'
                         ? 'bg-primary-100 border-primary-500 text-primary-700'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }
                     `}
                   >
-                    <AlignCenter className="w-4 h-4" />
-                    <span className="text-sm font-medium">중앙</span>
+                    <span className="text-sm font-medium">중간</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setImageAlign('right')}
+                    onClick={() => setImageAlign('top')}
                     className={`
-                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
-                      ${imageAlign === 'right'
+                      px-3 py-2 rounded-lg border transition-all text-center
+                      ${imageAlign === 'top'
                         ? 'bg-primary-100 border-primary-500 text-primary-700'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }
                     `}
                   >
-                    <AlignRight className="w-4 h-4" />
-                    <span className="text-sm font-medium">오른쪽</span>
+                    <span className="text-sm font-medium">위</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageAlign('bottom')}
+                    className={`
+                      px-3 py-2 rounded-lg border transition-all text-center
+                      ${imageAlign === 'bottom'
+                        ? 'bg-primary-100 border-primary-500 text-primary-700'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <span className="text-sm font-medium">아래</span>
                   </button>
                 </div>
               </div>
