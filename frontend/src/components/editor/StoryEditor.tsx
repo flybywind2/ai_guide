@@ -35,6 +35,12 @@ interface StoryEditorProps {
 
 type EditorMode = 'code' | 'wysiwyg';
 
+// Panel width constants
+const MIN_PANEL_WIDTH = 400;
+const MAX_PANEL_WIDTH = 900;
+const DEFAULT_PANEL_WIDTH = 600;
+const PANEL_WIDTH_KEY = 'storyEditor.panelWidth';
+
 export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [story, setStory] = useState<StoryWithPassages | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -46,6 +52,15 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
   const [storyVariables, setStoryVariables] = useState<string[]>([]);
   const [isMaximized, setIsMaximized] = useState(false);
   const [showMacroGuide, setShowMacroGuide] = useState(false);
+
+  // Resizable panel state
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = localStorage.getItem(PANEL_WIDTH_KEY);
+    return saved ? Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, parseInt(saved, 10))) : DEFAULT_PANEL_WIDTH;
+  });
+  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(0);
 
   const selectedPassage = selectedPassageId 
     ? allPassages.find(p => p.id === selectedPassageId) 
@@ -549,6 +564,37 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedPassageId(null);
   }, []);
 
+  // Panel resize handlers
+  const handlePanelResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingPanel(true);
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = panelWidth;
+  }, [panelWidth]);
+
+  useEffect(() => {
+    if (!isDraggingPanel) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = dragStartXRef.current - e.clientX;
+      const newWidth = Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, dragStartWidthRef.current + deltaX));
+      setPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingPanel(false);
+      localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingPanel, panelWidth]);
+
   if (!story) {
     return <div className="p-8">Loading...</div>;
   }
@@ -559,7 +605,7 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
         isMaximized
           ? 'fixed inset-0 z-50 bg-white'
           : 'h-[calc(100vh-64px)]'
-      }`}
+      } ${isDraggingPanel ? 'cursor-col-resize select-none' : ''}`}
     >
       <div className="flex-1 relative">
         {/* Enhanced Toolbar */}
@@ -717,7 +763,19 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
 
       {/* Passage Edit Panel */}
       {selectedPassage && (
-        <div className="w-[600px] bg-white border-l border-gray-200 flex flex-col overflow-hidden shadow-xl">
+        <div
+          className="relative bg-white border-l border-gray-200 flex flex-col overflow-hidden shadow-xl"
+          style={{ width: `${panelWidth}px` }}
+        >
+          {/* Resize Handle */}
+          <div
+            className={`absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 transition-colors
+              ${isDraggingPanel ? 'bg-primary-500' : 'bg-transparent hover:bg-primary-300'}`}
+            onMouseDown={handlePanelResizeStart}
+            title="드래그하여 패널 너비 조절"
+          >
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-16 rounded-full bg-gray-300 opacity-0 hover:opacity-100 transition-opacity" />
+          </div>
           <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
             <div>
               <h3 className="font-semibold text-gray-900">패시지 편집</h3>

@@ -11,6 +11,50 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Color from '@tiptap/extension-color';
 import TextStyle from '@tiptap/extension-text-style';
+
+// Custom Image Extension with size and alignment support
+const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: element => element.getAttribute('width') || element.style.width,
+        renderHTML: attributes => {
+          if (!attributes.width) return {};
+          return { width: attributes.width };
+        },
+      },
+      align: {
+        default: 'left',
+        parseHTML: element => {
+          const float = element.style.float;
+          const display = element.style.display;
+          const margin = element.style.margin;
+          if (display === 'block' && margin === '0px auto') return 'center';
+          if (float === 'right') return 'right';
+          return 'left';
+        },
+        renderHTML: attributes => {
+          const align = attributes.align || 'left';
+          if (align === 'center') {
+            return {
+              style: 'display: block; margin: 0 auto;',
+            };
+          } else if (align === 'right') {
+            return {
+              style: 'float: right; margin-left: 1rem;',
+            };
+          } else {
+            return {
+              style: 'float: left; margin-right: 1rem;',
+            };
+          }
+        },
+      },
+    };
+  },
+});
 import {
   Bold,
   Italic,
@@ -51,6 +95,14 @@ interface TipTapEditorProps {
   onChange: (html: string) => void;
   onImageUpload?: (file: File) => Promise<string>;
 }
+
+// Image size presets
+const IMAGE_SIZE_PRESETS = [
+  { label: '25%', value: '25%' },
+  { label: '50%', value: '50%' },
+  { label: '75%', value: '75%' },
+  { label: '100%', value: '100%' },
+];
 
 // Color palette for text and highlight
 const TEXT_COLORS = [
@@ -99,6 +151,10 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const [linkText, setLinkText] = useState('');
   const [showColorPicker, setShowColorPicker] = useState<'text' | 'highlight' | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageWidth, setImageWidth] = useState('50%');
+  const [imageAlign, setImageAlign] = useState<'left' | 'center' | 'right'>('left');
 
   const editor = useEditor({
     extensions: [
@@ -107,9 +163,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           keepMarks: true,
         },
       }),
-      Image.configure({
+      CustomImage.configure({
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full inline-block',
+          class: 'rounded-lg max-w-full',
         },
       }),
       Link.configure({
@@ -281,22 +337,54 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
         if (file) {
           try {
             const url = await onImageUpload(file);
-            editor.chain().focus().insertContent(`<img src="${url}" style="max-width: 300px; height: auto;" />`).run();
+            setImageUrl(url);
+            setImageWidth('50%');
+            setImageAlign('left');
+            setShowImageModal(true);
           } catch (error) {
             console.error('Failed to upload image:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            alert('이미지 업로드에 실패했습니다: ' + errorMessage);
           }
         }
       };
       input.click();
     } else {
-      const url = prompt('이미지 URL을 입력하세요:');
-      if (url) {
-        const width = prompt('이미지 너비 (픽셀):', '300');
-        const widthValue = width ? parseInt(width) : 300;
-        editor.chain().focus().insertContent(`<img src="${url}" style="max-width: ${widthValue}px; height: auto;" />`).run();
-      }
+      setImageUrl('');
+      setImageWidth('50%');
+      setImageAlign('left');
+      setShowImageModal(true);
     }
   };
+
+  const insertImage = useCallback(() => {
+    if (!editor || !imageUrl) return;
+
+    // Create image HTML with attributes
+    const imgHtml = `<img src="${imageUrl}" />`;
+    editor.chain().focus().insertContent(imgHtml).run();
+
+    // Update the newly inserted image with custom attributes
+    editor.chain().focus().updateAttributes('image', {
+      width: imageWidth,
+      align: imageAlign,
+    }).run();
+
+    setShowImageModal(false);
+    setImageUrl('');
+    setImageWidth('50%');
+    setImageAlign('left');
+  }, [editor, imageUrl, imageWidth, imageAlign]);
+
+  const updateImageSize = useCallback((size: string) => {
+    if (!editor) return;
+    editor.chain().focus().updateAttributes('image', { width: size }).run();
+  }, [editor]);
+
+  const updateImageAlign = useCallback((align: 'left' | 'center' | 'right') => {
+    if (!editor) return;
+    editor.chain().focus().updateAttributes('image', { align }).run();
+  }, [editor]);
 
   const openLinkModal = useCallback(() => {
     if (!editor) return;
@@ -641,6 +729,53 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
         <ToolbarDivider />
 
+        {/* Image Controls - Only visible when image is selected */}
+        {editor.isActive('image') && (
+          <>
+            <ToolbarGroup label="이미지 크기">
+              {IMAGE_SIZE_PRESETS.map((preset) => (
+                <ToolbarButton
+                  key={preset.value}
+                  onClick={() => updateImageSize(preset.value)}
+                  title={`${preset.label} 크기`}
+                >
+                  <span className="text-xs font-medium">{preset.label}</span>
+                </ToolbarButton>
+              ))}
+            </ToolbarGroup>
+
+            <ToolbarDivider />
+
+            <ToolbarGroup label="이미지 정렬">
+              <ToolbarButton
+                onClick={() => updateImageAlign('left')}
+                isActive={editor.getAttributes('image').align === 'left'}
+                title="왼쪽 정렬"
+              >
+                <AlignLeft className="w-4 h-4" />
+              </ToolbarButton>
+
+              <ToolbarButton
+                onClick={() => updateImageAlign('center')}
+                isActive={editor.getAttributes('image').align === 'center'}
+                title="가운데 정렬"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </ToolbarButton>
+
+              <ToolbarButton
+                onClick={() => updateImageAlign('right')}
+                isActive={editor.getAttributes('image').align === 'right'}
+                title="오른쪽 정렬"
+              >
+                <AlignRight className="w-4 h-4" />
+              </ToolbarButton>
+            </ToolbarGroup>
+
+            <ToolbarDivider />
+          </>
+        )}
+
         {/* Insert Group */}
         <ToolbarGroup label="삽입">
           <ToolbarButton
@@ -749,7 +884,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
       </div>
 
       {/* Editor Content */}
-      <div className="relative">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {isDraggingImage && (
           <div className="absolute inset-0 flex items-center justify-center bg-primary-50/80 z-10 pointer-events-none">
             <div className="flex flex-col items-center gap-2 text-primary-600">
@@ -839,6 +974,151 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
               >
                 <Check className="w-4 h-4" />
                 적용
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">이미지 삽입</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImageModal(false);
+                  setImageUrl('');
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              {!onImageUpload && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    이미지 URL
+                  </label>
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이미지 크기
+                </label>
+                <div className="flex gap-2">
+                  {IMAGE_SIZE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => setImageWidth(preset.value)}
+                      className={`
+                        flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-all
+                        ${imageWidth === preset.value
+                          ? 'bg-primary-100 border-primary-500 text-primary-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={imageWidth}
+                    onChange={(e) => setImageWidth(e.target.value)}
+                    placeholder="예: 300px, 50%, auto"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    픽셀(300px) 또는 퍼센트(50%) 입력 가능
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  정렬
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setImageAlign('left')}
+                    className={`
+                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
+                      ${imageAlign === 'left'
+                        ? 'bg-primary-100 border-primary-500 text-primary-700'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <AlignLeft className="w-4 h-4" />
+                    <span className="text-sm font-medium">왼쪽</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageAlign('center')}
+                    className={`
+                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
+                      ${imageAlign === 'center'
+                        ? 'bg-primary-100 border-primary-500 text-primary-700'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <AlignCenter className="w-4 h-4" />
+                    <span className="text-sm font-medium">중앙</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageAlign('right')}
+                    className={`
+                      flex-1 px-3 py-2 rounded-lg border transition-all flex items-center justify-center gap-2
+                      ${imageAlign === 'right'
+                        ? 'bg-primary-100 border-primary-500 text-primary-700'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <AlignRight className="w-4 h-4" />
+                    <span className="text-sm font-medium">오른쪽</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImageModal(false);
+                  setImageUrl('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={insertImage}
+                disabled={!imageUrl}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                삽입
               </button>
             </div>
           </div>
