@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Bookmark, BookmarkCheck, Pencil, GitFork, ChevronRight } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Pencil, GitFork, ChevronRight, Play, Flag, FileText, Sparkles } from 'lucide-react';
 import { useStoryStore } from '../../stores/storyStore';
 import { useAuthStore } from '../../stores/authStore';
 import { TwinePassageRenderer } from '../reader/TwinePassageRenderer';
@@ -11,6 +11,34 @@ import {
 } from '../../utils/twine-runtime';
 import { parseBranchData } from '../../utils/branch-utils';
 import type { PassageWithContext } from '../../types';
+
+// Passage type badge configuration
+const PASSAGE_TYPE_CONFIG = {
+  start: {
+    bg: 'bg-gradient-to-r from-emerald-400 to-green-500',
+    text: 'text-white',
+    icon: Play,
+    label: 'Start',
+  },
+  end: {
+    bg: 'bg-gradient-to-r from-rose-400 to-red-500',
+    text: 'text-white',
+    icon: Flag,
+    label: 'End',
+  },
+  branch: {
+    bg: 'bg-gradient-to-r from-amber-400 to-orange-500',
+    text: 'text-white',
+    icon: GitFork,
+    label: 'Branch',
+  },
+  content: {
+    bg: 'bg-gradient-to-r from-violet-400 to-purple-500',
+    text: 'text-white',
+    icon: FileText,
+    label: 'Content',
+  },
+};
 
 interface PassageViewProps {
   context: PassageWithContext;
@@ -103,55 +131,76 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
   // Extract links for display
   const links = extractLinksFromContent(passage.content || '');
 
+  // Get passage type config
+  const typeConfig = PASSAGE_TYPE_CONFIG[passage.passage_type as keyof typeof PASSAGE_TYPE_CONFIG] || PASSAGE_TYPE_CONFIG.content;
+  const TypeIcon = typeConfig.icon;
+
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded mb-2 ${
-              passage.passage_type === 'start'
-                ? 'bg-green-100 text-green-700'
-                : passage.passage_type === 'end'
-                ? 'bg-red-100 text-red-700'
-                : passage.passage_type === 'branch'
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-primary-100 text-primary-700'
-            }`}
-          >
-            {passage.passage_type}
-          </span>
-          <h1 className="text-3xl font-bold text-gray-900">{passage.name}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {canEdit && !isEditing && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
-              title="Edit passage"
-            >
-              <Pencil className="w-5 h-5" />
-            </button>
-          )}
-          {canEdit && (passage.passage_type === 'branch' || passage.passage_type === 'start') && (
-            <div className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-lg">
-              {passage.passage_type === 'branch' ? 'Branch' : 'Start'} 노드는 에디터에서만 편집 가능
+    <article className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-w-3xl mx-auto transition-all duration-300 hover:shadow-xl">
+      {/* Header with gradient accent */}
+      <div className="relative">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500" />
+
+        <div className="p-8 pt-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Type badge with icon */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${typeConfig.bg} ${typeConfig.text}`}>
+                  <TypeIcon className="w-3.5 h-3.5" />
+                  {typeConfig.label}
+                </span>
+              </div>
+
+              {/* Title with better typography */}
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight leading-tight">
+                {passage.name}
+              </h1>
             </div>
-          )}
-          {isAuthenticated && (
-            <button
-              onClick={handleBookmark}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-            >
-              {isBookmarked ? (
-                <BookmarkCheck className="w-6 h-6 text-primary-600" />
-              ) : (
-                <Bookmark className="w-6 h-6 text-gray-400" />
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {canEdit && !isEditing && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="group p-2.5 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-600 transition-all duration-200 hover:scale-105"
+                  title="Edit passage"
+                >
+                  <Pencil className="w-5 h-5 transition-transform group-hover:rotate-12" />
+                </button>
               )}
-            </button>
-          )}
+              {canEdit && (passage.passage_type === 'branch' || passage.passage_type === 'start') && (
+                <div className="px-3 py-1.5 text-xs font-medium bg-amber-50 text-amber-700 rounded-xl border border-amber-200">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    에디터에서 편집
+                  </span>
+                </div>
+              )}
+              {isAuthenticated && (
+                <button
+                  onClick={handleBookmark}
+                  className={`group p-2.5 rounded-xl transition-all duration-200 hover:scale-105 ${
+                    isBookmarked
+                      ? 'bg-violet-100 text-violet-600'
+                      : 'bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-violet-500'
+                  }`}
+                  title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                >
+                  {isBookmarked ? (
+                    <BookmarkCheck className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  ) : (
+                    <Bookmark className="w-5 h-5 transition-transform group-hover:scale-110" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Content area with padding */}
+      <div className="px-8 pb-8">
 
       {isEditing ? (
         <InlinePassageEditor
@@ -179,21 +228,24 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Show branch choices for branch and start passages */}
       {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length > 0 && (
-        <div className="mt-8 pt-6 border-t-2 border-amber-200">
-          {/* Branch header */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-300" />
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full">
-              <GitFork className="w-5 h-5 text-amber-600" />
-              <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
-                Choose Your Path
-              </span>
+        <div className="mt-10 pt-8 border-t border-gray-100">
+          {/* Branch header with animated decoration */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-200 to-amber-400" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-400 blur-lg opacity-30 animate-pulse" />
+              <div className="relative flex items-center gap-2.5 px-5 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-full shadow-sm">
+                <GitFork className="w-5 h-5 text-amber-600" />
+                <span className="text-sm font-bold text-amber-700 uppercase tracking-wider">
+                  Choose Your Path
+                </span>
+              </div>
             </div>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-300" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-amber-200 to-amber-400" />
           </div>
 
-          {/* Branch choices */}
-          <div className="space-y-3">
+          {/* Branch choices with enhanced styling */}
+          <div className="space-y-4">
             {branchChoices.map((choice, index) => {
               const matchingLink = sortedLinks[index];
               const handleClick = () => {
@@ -202,61 +254,81 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
                 }
               };
 
+              // Different gradient colors for each choice
+              const gradients = [
+                'from-violet-500 to-purple-600',
+                'from-blue-500 to-indigo-600',
+                'from-emerald-500 to-teal-600',
+                'from-amber-500 to-orange-600',
+                'from-rose-500 to-pink-600',
+              ];
+              const gradientClass = gradients[index % gradients.length];
+
               return (
                 <button
                   key={index}
                   onClick={handleClick}
                   disabled={!matchingLink}
-                  className={`w-full group relative p-5 bg-white border-2 rounded-xl text-left transition-all duration-200 ${
+                  className={`w-full group relative overflow-hidden rounded-2xl text-left transition-all duration-300 ${
                     matchingLink
-                      ? 'border-amber-200 hover:border-amber-400 hover:shadow-lg hover:scale-[1.01] cursor-pointer'
-                      : 'border-gray-200 opacity-50 cursor-not-allowed'
+                      ? 'cursor-pointer hover:scale-[1.02] hover:shadow-xl'
+                      : 'opacity-50 cursor-not-allowed'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Choice number badge */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                      matchingLink
-                        ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-md'
-                        : 'bg-gray-200 text-gray-400'
-                    }`}>
-                      {index + 1}
-                    </div>
-
-                    {/* Choice content */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className={`font-semibold text-lg mb-1 ${
+                  {/* Background with gradient border effect */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${gradientClass} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                  <div className={`relative m-[2px] rounded-[14px] p-5 transition-colors duration-300 ${
+                    matchingLink ? 'bg-white group-hover:bg-gray-50' : 'bg-gray-50'
+                  }`}>
+                    <div className="flex items-center gap-5">
+                      {/* Choice number badge with gradient */}
+                      <div className={`relative flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-transform duration-300 group-hover:scale-110 ${
                         matchingLink
-                          ? 'text-gray-800 group-hover:text-amber-700'
-                          : 'text-gray-400'
+                          ? `bg-gradient-to-br ${gradientClass} text-white shadow-lg`
+                          : 'bg-gray-200 text-gray-400'
                       }`}>
-                        {choice.button || `Option ${index + 1}`}
-                      </h4>
-                      {choice.description && (
-                        <p className={`text-sm ${
-                          matchingLink ? 'text-gray-500' : 'text-gray-400'
+                        <span className="relative z-10">{index + 1}</span>
+                        {matchingLink && (
+                          <div className="absolute inset-0 rounded-xl bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                        )}
+                      </div>
+
+                      {/* Choice content */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`font-semibold text-lg mb-1 transition-colors duration-200 ${
+                          matchingLink
+                            ? 'text-gray-800 group-hover:text-gray-900'
+                            : 'text-gray-400'
                         }`}>
-                          {choice.description}
-                        </p>
-                      )}
+                          {choice.button || `Option ${index + 1}`}
+                        </h4>
+                        {choice.description && (
+                          <p className={`text-sm line-clamp-2 ${
+                            matchingLink ? 'text-gray-500 group-hover:text-gray-600' : 'text-gray-400'
+                          }`}>
+                            {choice.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Arrow icon with animation */}
+                      <div className={`flex-shrink-0 p-2 rounded-full transition-all duration-300 ${
+                        matchingLink
+                          ? `bg-gradient-to-r ${gradientClass} text-white shadow-md opacity-50 group-hover:opacity-100 group-hover:translate-x-1`
+                          : 'bg-gray-200 text-gray-400'
+                      }`}>
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
                     </div>
 
-                    {/* Arrow icon */}
-                    <div className={`flex-shrink-0 ${
-                      matchingLink
-                        ? 'text-amber-400 group-hover:text-amber-600 group-hover:translate-x-1'
-                        : 'text-gray-300'
-                    } transition-all duration-200`}>
-                      <ChevronRight className="w-6 h-6" />
-                    </div>
+                    {/* Not connected warning */}
+                    {!matchingLink && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-red-500 font-medium">
+                        <span className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center text-red-500">!</span>
+                        Not connected to a passage
+                      </div>
+                    )}
                   </div>
-
-                  {/* Not connected warning */}
-                  {!matchingLink && (
-                    <div className="mt-2 text-xs text-red-500">
-                      ⚠ Not connected to a passage
-                    </div>
-                  )}
                 </button>
               );
             })}
@@ -264,12 +336,12 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
           {/* Fallback if no branch data but has links */}
           {branchChoices.length === 0 && sortedLinks.length > 0 && (
-            <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-              <div className="p-2 bg-amber-100 rounded-full">
-                <GitFork className="w-5 h-5 text-amber-600" />
+            <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm">
+              <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-400 rounded-xl text-white shadow-md">
+                <GitFork className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-medium text-amber-800">Decision Point</p>
+                <p className="font-semibold text-amber-800">Decision Point</p>
                 <p className="text-sm text-amber-600">Choose your path below to continue</p>
               </div>
             </div>
@@ -279,13 +351,13 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Fallback for branch/start passages without branch data */}
       {(passage.passage_type === 'branch' || passage.passage_type === 'start') && branchChoices.length === 0 && (
-        <div className="mt-6 pt-6 border-t border-amber-200">
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-            <div className="p-2 bg-amber-100 rounded-full">
-              <GitFork className="w-5 h-5 text-amber-600" />
+        <div className="mt-8 pt-8 border-t border-gray-100">
+          <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm">
+            <div className="p-3 bg-gradient-to-br from-amber-400 to-orange-400 rounded-xl text-white shadow-md">
+              <GitFork className="w-6 h-6" />
             </div>
             <div>
-              <p className="font-medium text-amber-800">Decision Point</p>
+              <p className="font-semibold text-amber-800">Decision Point</p>
               <p className="text-sm text-amber-600">Choose your path below to continue</p>
             </div>
           </div>
@@ -294,29 +366,31 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
 
       {/* Show inline links if available (not for branch/start passages - they use the nav bar) */}
       {links.length > 0 && passage.passage_type !== 'branch' && passage.passage_type !== 'start' && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Continue to:</h3>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-8 pt-8 border-t border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-600 mb-4 uppercase tracking-wide">Continue to:</h3>
+          <div className="flex flex-wrap gap-3">
             {links.map((link, index) => (
               <button
                 key={index}
                 onClick={() => handleNavigate(link)}
-                className="px-4 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
+                className="group relative px-5 py-2.5 bg-gradient-to-r from-violet-50 to-purple-50 text-violet-700 rounded-xl hover:from-violet-100 hover:to-purple-100 transition-all duration-200 text-sm font-medium border border-violet-200 hover:border-violet-300 hover:shadow-md hover:scale-105"
               >
-                {link}
+                <span className="relative z-10">{link}</span>
+                <ChevronRight className="inline-block w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             ))}
           </div>
         </div>
       )}
 
+      {/* Tags with improved styling */}
       {passage.tags.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="mt-8 pt-6 border-t border-gray-100">
           <div className="flex flex-wrap gap-2">
             {passage.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors cursor-default"
               >
                 #{tag}
               </span>
@@ -328,16 +402,20 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
       {/* Debug: Show current state (can be removed in production) */}
       {Object.keys(twineState.variables).length > 0 && (
         <div className="mt-6 pt-6 border-t border-gray-100">
-          <details className="text-sm text-gray-500">
-            <summary className="cursor-pointer hover:text-gray-700">
-              Story Variables ({Object.keys(twineState.variables).length})
+          <details className="text-sm text-gray-500 group">
+            <summary className="cursor-pointer hover:text-gray-700 font-medium flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs">
+                {Object.keys(twineState.variables).length}
+              </span>
+              Story Variables
             </summary>
-            <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto">
+            <pre className="mt-3 p-4 bg-gray-50 rounded-xl text-xs overflow-auto font-mono border border-gray-100">
               {JSON.stringify(twineState.variables, null, 2)}
             </pre>
           </details>
         </div>
       )}
+      </div>
     </article>
   );
 };

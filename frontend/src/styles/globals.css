@@ -58,69 +58,271 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Passage content styles */
+/* Passage content styles - Enhanced Design */
 .passage-content {
   @apply text-gray-700 leading-relaxed;
+  font-size: 1.0625rem; /* 17px for better readability */
+  line-height: 1.75;
 }
 
+/* Headings with decorative accents */
 .passage-content h1 {
-  @apply text-3xl font-bold text-gray-900 mb-4;
+  @apply text-3xl font-bold text-gray-900 mb-6 mt-8 pb-3;
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid;
+  border-image: linear-gradient(to right, var(--primary-main), var(--secondary-pink)) 1;
 }
 
 .passage-content h2 {
-  @apply text-2xl font-semibold text-gray-800 mb-3;
+  @apply text-2xl font-semibold text-gray-800 mb-4 mt-8;
+  letter-spacing: -0.01em;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.passage-content h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  bottom: 0.2em;
+  width: 4px;
+  background: linear-gradient(180deg, var(--primary-main), var(--secondary-purple-1));
+  border-radius: 2px;
 }
 
 .passage-content h3 {
-  @apply text-xl font-semibold text-gray-800 mb-2;
+  @apply text-xl font-semibold text-gray-800 mb-3 mt-6;
+  letter-spacing: -0.01em;
 }
 
+.passage-content h4 {
+  @apply text-lg font-semibold text-gray-700 mb-2 mt-5;
+}
+
+/* Paragraphs */
 .passage-content p {
-  @apply text-gray-700 leading-relaxed mb-4;
+  @apply text-gray-700 mb-5;
+  line-height: 1.8;
 }
 
-.passage-content ul, .passage-content ol {
-  @apply mb-4 pl-6;
+.passage-content p:first-of-type {
+  @apply text-lg text-gray-600;
 }
 
-.passage-content li {
-  @apply mb-2;
+/* Lists with custom styling */
+.passage-content ul {
+  @apply mb-5 pl-0 space-y-2;
+  list-style: none;
 }
 
+.passage-content ul li {
+  @apply pl-6 relative;
+}
+
+.passage-content ul li::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.65em;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, var(--primary-main), var(--secondary-purple-1));
+  border-radius: 50%;
+}
+
+.passage-content ol {
+  @apply mb-5 pl-0;
+  list-style: none;
+  counter-reset: list-counter;
+}
+
+.passage-content ol li {
+  @apply pl-10 relative mb-3;
+  counter-increment: list-counter;
+}
+
+.passage-content ol li::before {
+  content: counter(list-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary-main);
+}
+
+/* Enhanced links */
 .passage-content a {
-  @apply text-primary-600 hover:text-primary-700 underline;
+  color: var(--primary-main);
+  text-decoration: none;
+  background: linear-gradient(to right, var(--primary-main), var(--primary-main)) no-repeat right bottom / 0 2px;
+  transition: background-size 0.3s ease, color 0.2s ease;
+  padding-bottom: 2px;
 }
 
+.passage-content a:hover {
+  color: var(--primary-dark);
+  background-size: 100% 2px;
+  background-position: left bottom;
+}
+
+/* External link indicator */
+.passage-content a[href^="http"]::after {
+  content: ' ↗';
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+/* Inline code */
 .passage-content code {
-  @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono;
+  @apply px-2 py-1 rounded-md text-sm font-mono;
+  background: linear-gradient(135deg, #f3f0ff, #ede9fe);
+  color: var(--primary-dark);
+  border: 1px solid #e9d5ff;
 }
 
+/* Code blocks */
 .passage-content pre {
-  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
+  @apply p-5 rounded-xl overflow-x-auto mb-6;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 16px rgba(88, 28, 135, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .passage-content pre code {
-  @apply bg-transparent p-0;
+  @apply bg-transparent border-0 p-0;
+  color: #e0e7ff;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
+/* Images with enhanced styling */
 .passage-content img {
-  @apply rounded-lg max-w-full h-auto;
+  @apply rounded-xl max-w-full h-auto my-6;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.passage-content img:hover {
+  transform: scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Image captions (figure/figcaption if used) */
+.passage-content figure {
+  @apply my-8;
+}
+
+.passage-content figcaption {
+  @apply text-center text-sm text-gray-500 mt-3 italic;
+}
+
+/* Blockquotes with distinctive styling */
 .passage-content blockquote {
-  @apply border-l-4 border-primary-500 pl-4 italic text-gray-600;
+  @apply my-8 py-4 px-6 rounded-r-xl;
+  background: linear-gradient(to right, var(--bg-tertiary), transparent);
+  border-left: 4px solid;
+  border-image: linear-gradient(180deg, var(--primary-main), var(--secondary-pink)) 1;
+  font-style: italic;
+  color: var(--text-secondary);
+  position: relative;
 }
 
+.passage-content blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 1rem;
+  font-size: 4rem;
+  font-family: Georgia, serif;
+  color: var(--primary-light);
+  opacity: 0.3;
+  line-height: 1;
+}
+
+.passage-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tables with zebra striping and modern design */
 .passage-content table {
-  @apply w-full border-collapse mb-4;
+  @apply w-full border-collapse mb-6 rounded-xl overflow-hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.passage-content th, .passage-content td {
-  @apply border border-gray-300 px-4 py-2 text-left;
+.passage-content thead {
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
 }
 
 .passage-content th {
-  @apply bg-gray-100 font-semibold;
+  @apply px-5 py-3 text-left font-semibold text-gray-700;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.passage-content td {
+  @apply px-5 py-3 text-left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.passage-content tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.passage-content tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Horizontal rule */
+.passage-content hr {
+  @apply my-10 border-0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--primary-light), var(--secondary-pink), transparent);
+}
+
+/* Strong/bold text with slight color enhancement */
+.passage-content strong {
+  @apply font-semibold;
+  color: var(--text-primary);
+}
+
+/* Emphasized text */
+.passage-content em {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* Marked/highlighted text */
+.passage-content mark {
+  @apply px-1 rounded;
+  background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+}
+
+/* Keyboard shortcuts */
+.passage-content kbd {
+  @apply px-2 py-1 rounded text-sm font-mono;
+  background: linear-gradient(180deg, #fff, #f3f4f6);
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 0 #d1d5db;
+}
+
+/* Abbreviations */
+.passage-content abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* Selection highlight */
+.passage-content ::selection {
+  background: var(--secondary-pink);
+  color: var(--text-primary);
 }
 
 /* React Flow custom styles */

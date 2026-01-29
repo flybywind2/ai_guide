@@ -161,14 +161,23 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     },
     editorProps: {
       handlePaste: (view, event) => {
-        const items = event.clipboardData?.items;
-        if (!items) return false;
+        // Check clipboard items for images
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return false;
 
+        // Use Array.from to convert items to array for proper iteration
+        const items = Array.from(clipboardData.items || []);
+
+        // Also check files directly (some browsers put images there)
+        const files = Array.from(clipboardData.files || []);
+
+        // First check items for image data
         for (const item of items) {
           if (item.type.startsWith('image/')) {
             event.preventDefault();
             const file = item.getAsFile();
             if (file && onImageUpload) {
+              console.log('Pasting image from clipboard items:', file.name, file.type);
               onImageUpload(file).then((url) => {
                 const { state } = view;
                 const { tr } = state;
@@ -177,11 +186,37 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 view.dispatch(tr.insert(pos, node));
               }).catch((error) => {
                 console.error('Failed to upload pasted image:', error);
+                alert('이미지 업로드에 실패했습니다: ' + (error?.message || error));
+              });
+            } else if (!onImageUpload) {
+              console.warn('onImageUpload prop is not provided');
+              alert('이미지 업로드 기능이 설정되지 않았습니다.');
+            }
+            return true;
+          }
+        }
+
+        // Fallback: check files array directly
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            event.preventDefault();
+            if (onImageUpload) {
+              console.log('Pasting image from clipboard files:', file.name, file.type);
+              onImageUpload(file).then((url) => {
+                const { state } = view;
+                const { tr } = state;
+                const pos = state.selection.from;
+                const node = state.schema.nodes.image.create({ src: url });
+                view.dispatch(tr.insert(pos, node));
+              }).catch((error) => {
+                console.error('Failed to upload pasted image:', error);
+                alert('이미지 업로드에 실패했습니다: ' + (error?.message || error));
               });
             }
             return true;
           }
         }
+
         return false;
       },
       handleDrop: (view, event) => {
