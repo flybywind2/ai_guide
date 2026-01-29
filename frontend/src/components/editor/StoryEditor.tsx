@@ -83,24 +83,44 @@ export const StoryEditor: React.FC<StoryEditorProps> = ({ storyId }) => {
 
       const newNodes: Node[] = data.passages.map((p) => {
         const isBranch = p.passage_type === 'branch' || p.passage_type === 'start';
+
+        // Enhanced node styles with better visual hierarchy
+        const getNodeStyle = () => {
+          if (isBranch) return undefined;
+
+          const baseStyle = {
+            width: p.width || 200,
+            minHeight: p.height || 80,
+            padding: '12px',
+            borderRadius: '12px',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer',
+          };
+
+          if (p.passage_type === 'end') {
+            return {
+              ...baseStyle,
+              background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
+              border: '2px solid #F87171',
+              boxShadow: '0 4px 12px rgba(248, 113, 113, 0.15)',
+            };
+          }
+
+          // Default content node
+          return {
+            ...baseStyle,
+            background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
+            border: '2px solid #E2E8F0',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+          };
+        };
+
         return {
           id: p.id,
           type: isBranch ? 'branch' : undefined,
           position: { x: p.position_x, y: p.position_y },
           data: { label: p.name, passage: p },
-          style: isBranch ? undefined : {
-            width: p.width,
-            minHeight: p.height,
-            padding: '10px',
-            backgroundColor:
-              p.passage_type === 'start'
-                ? '#D1FAE5'
-                : p.passage_type === 'end'
-                ? '#FEE2E2'
-                : '#FFFFFF',
-            border: '2px solid #E5E7EB',
-            borderRadius: '8px',
-          },
+          style: getNodeStyle(),
         };
       });
 
@@ -542,57 +562,90 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
       }`}
     >
       <div className="flex-1 relative">
-        <div className="absolute top-4 left-4 z-10 flex gap-2">
-          <Button onClick={addPassage}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Passage
-          </Button>
-          <Button variant="secondary" onClick={savePositions} disabled={isSaving}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Positions
-          </Button>
-          <Button variant="secondary" onClick={testStory}>
-            <Play className="w-4 h-4 mr-2" />
-            Test Story
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setIsMaximized(!isMaximized)}
-            title={isMaximized ? 'Exit fullscreen' : 'Fullscreen'}
-          >
-            {isMaximized ? (
-              <Minimize2 className="w-4 h-4" />
-            ) : (
-              <Maximize2 className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowMacroGuide(true)}
-            title="Macro Guide"
-          >
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Macro Guide
-          </Button>
+        {/* Enhanced Toolbar */}
+        <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-2 flex-wrap">
+          {/* Primary Actions */}
+          <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-3 py-2 shadow-lg">
+            <Button size="sm" onClick={addPassage}>
+              <Plus className="w-4 h-4" />
+              패시지 추가
+            </Button>
+            <div className="w-px h-6 bg-gray-200" />
+            <Button size="sm" variant="secondary" onClick={savePositions} disabled={isSaving} loading={isSaving}>
+              <Save className="w-4 h-4" />
+              위치 저장
+            </Button>
+            <Button size="sm" variant="secondary" onClick={testStory}>
+              <Play className="w-4 h-4" />
+              테스트
+            </Button>
+          </div>
 
-          {/* CSV Export/Import Buttons */}
-          <div className="flex gap-1 ml-2 border-l border-gray-300 pl-2">
-            <Button variant="secondary" onClick={exportPassagesCSV} title="Export Passages to CSV">
-              <Download className="w-4 h-4 mr-1" />
-              Passages
-            </Button>
-            <Button variant="secondary" onClick={exportLinksCSV} title="Export Links to CSV">
-              <Download className="w-4 h-4 mr-1" />
-              Links
-            </Button>
-            <Button variant="secondary" onClick={importPassagesCSV} title="Import Passages from CSV">
-              <Upload className="w-4 h-4 mr-1" />
-              Passages
-            </Button>
-            <Button variant="secondary" onClick={importLinksCSV} title="Import Links from CSV">
-              <Upload className="w-4 h-4 mr-1" />
-              Links
-            </Button>
+          {/* View Controls */}
+          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-2 py-2 shadow-lg">
+            <button
+              type="button"
+              onClick={() => setIsMaximized(!isMaximized)}
+              title={isMaximized ? '전체화면 종료' : '전체화면'}
+              className="p-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              {isMaximized ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMacroGuide(true)}
+              title="매크로 가이드"
+              className="p-1.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* CSV Import/Export */}
+          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl px-2 py-2 shadow-lg">
+            <span className="text-xs text-gray-500 px-2 font-medium">CSV</span>
+            <div className="w-px h-5 bg-gray-200" />
+            <button
+              type="button"
+              onClick={exportPassagesCSV}
+              title="패시지 내보내기"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              패시지
+            </button>
+            <button
+              type="button"
+              onClick={exportLinksCSV}
+              title="링크 내보내기"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              링크
+            </button>
+            <div className="w-px h-5 bg-gray-200" />
+            <button
+              type="button"
+              onClick={importPassagesCSV}
+              title="패시지 가져오기"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              패시지
+            </button>
+            <button
+              type="button"
+              onClick={importLinksCSV}
+              title="링크 가져오기"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              링크
+            </button>
           </div>
         </div>
 
@@ -603,12 +656,17 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
             ...e,
             style: {
               ...e.style,
-              stroke: selectedEdge?.id === e.id ? '#3B82F6' : e.style?.stroke,
+              stroke: selectedEdge?.id === e.id ? '#6366F1' : e.style?.stroke,
               strokeWidth: selectedEdge?.id === e.id ? 3 : e.style?.strokeWidth || 2,
             },
             labelStyle: {
-              fill: selectedEdge?.id === e.id ? '#3B82F6' : '#374151',
+              fill: selectedEdge?.id === e.id ? '#6366F1' : '#374151',
               fontWeight: selectedEdge?.id === e.id ? 600 : 400,
+              fontSize: 11,
+            },
+            labelBgStyle: {
+              fill: selectedEdge?.id === e.id ? '#EEF2FF' : '#F9FAFB',
+              fillOpacity: 0.9,
             },
           }))}
           onNodesChange={handleNodesChange}
@@ -623,30 +681,67 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
           selectionMode={SelectionMode.Partial}
           panOnDrag={[1, 2]}
           selectNodesOnDrag={false}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
+          }}
         >
-          <Background />
-          <Controls />
-          <MiniMap />
+          <Background color="#E2E8F0" gap={20} size={1} />
+          <Controls
+            className="!bg-white !border !border-gray-200 !rounded-lg !shadow-lg"
+            position="bottom-left"
+            showZoom={true}
+            showFitView={true}
+            showInteractive={false}
+          />
+          <MiniMap
+            nodeColor={(node) => {
+              const passage = (node.data as any)?.passage;
+              if (!passage) return '#94A3B8';
+              switch (passage.passage_type) {
+                case 'start': return '#10B981';
+                case 'branch': return '#F59E0B';
+                case 'end': return '#EF4444';
+                default: return '#6366F1';
+              }
+            }}
+            nodeStrokeWidth={3}
+            maskColor="rgba(0, 0, 0, 0.1)"
+            className="!bg-white/80 !border !border-gray-200 !rounded-lg !shadow-lg"
+            position="bottom-right"
+            pannable
+            zoomable
+          />
         </ReactFlow>
       </div>
 
+      {/* Passage Edit Panel */}
       {selectedPassage && (
-        <div className="w-[600px] bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="w-[600px] bg-white border-l border-gray-200 flex flex-col overflow-hidden shadow-xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
             <div>
-              <h3 className="font-semibold">Edit Passage</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {selectedPassage.passage_type} passage
+              <h3 className="font-semibold text-gray-900">패시지 편집</h3>
+              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+                <span className={`
+                  inline-block w-2 h-2 rounded-full
+                  ${selectedPassage.passage_type === 'start' ? 'bg-emerald-500' :
+                    selectedPassage.passage_type === 'branch' ? 'bg-amber-500' :
+                    selectedPassage.passage_type === 'end' ? 'bg-red-500' :
+                    'bg-indigo-500'}
+                `} />
+                {selectedPassage.passage_type === 'start' ? '시작' :
+                 selectedPassage.passage_type === 'branch' ? '분기' :
+                 selectedPassage.passage_type === 'end' ? '종료' : '콘텐츠'} 패시지
               </p>
             </div>
             <button
               onClick={closeEditor}
-              className="p-1 rounded hover:bg-gray-100"
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-5">
             <PassageEditForm
               key={selectedPassage.id}
               passage={selectedPassage}
@@ -659,25 +754,36 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
         </div>
       )}
 
+      {/* Link Edit Panel */}
       {selectedEdge && (
-        <div className="w-[350px] bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Edit Link</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Connection between passages
-              </p>
+        <div className="w-[380px] bg-white border-l border-gray-200 flex flex-col overflow-hidden shadow-xl">
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">링크 편집</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  패시지 간 연결 설정
+                </p>
+              </div>
             </div>
             <button
               onClick={() => setSelectedEdge(null)}
-              className="p-1 rounded hover:bg-gray-100"
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {/* Label Input */}
             <div>
-              <label className="block text-sm font-medium mb-1">Label (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                라벨 <span className="text-gray-400 font-normal">(선택)</span>
+              </label>
               <input
                 type="text"
                 value={(selectedEdge.label as string) || ''}
@@ -703,16 +809,17 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
                     (e.target as HTMLInputElement).blur();
                   }
                 }}
-                placeholder="Enter link label..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="연결선에 표시할 라벨..."
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Label appears on the connection line
+              <p className="mt-1.5 text-xs text-gray-500">
+                연결선 위에 표시되는 텍스트입니다
               </p>
             </div>
 
+            {/* Condition Type */}
             <div>
-              <label className="block text-sm font-medium mb-1">조건 타입</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">조건 타입</label>
               <select
                 value={(selectedEdge.data?.conditionType as string) || 'always'}
                 onChange={(e) => {
@@ -723,22 +830,28 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
                     newType === 'previous_passage' ? (selectedEdge.data?.conditionValue as string | undefined) : undefined
                   );
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400 cursor-pointer"
               >
                 <option value="always">항상 표시</option>
                 <option value="previous_passage">이전 페이지 조건부</option>
                 <option value="user_selection">사용자 선택</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
-                {selectedEdge.data?.conditionType === 'always' && '단일 진행용. 여러 개 있어도 첫 번째만 "다음" 버튼으로 표시됩니다.'}
+              <div className={`
+                mt-2 p-3 rounded-lg text-xs
+                ${selectedEdge.data?.conditionType === 'always' ? 'bg-gray-50 text-gray-600' :
+                  selectedEdge.data?.conditionType === 'previous_passage' ? 'bg-amber-50 text-amber-700' :
+                  'bg-indigo-50 text-indigo-700'}
+              `}>
+                {selectedEdge.data?.conditionType === 'always' && '단일 진행용입니다. 여러 개 있어도 첫 번째만 "다음" 버튼으로 표시됩니다.'}
                 {selectedEdge.data?.conditionType === 'previous_passage' && '특정 페이지에서 왔을 때만 표시됩니다. 조건부 단일 진행에 사용하세요.'}
-                {selectedEdge.data?.conditionType === 'user_selection' && '분기 선택용. 모든 링크가 개별 선택 버튼으로 표시됩니다.'}
-              </p>
+                {selectedEdge.data?.conditionType === 'user_selection' && '분기 선택용입니다. 모든 링크가 개별 선택 버튼으로 표시됩니다.'}
+              </div>
             </div>
 
+            {/* Previous Passage Condition */}
             {selectedEdge.data?.conditionType === 'previous_passage' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">필요한 이전 페이지</label>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <label className="block text-sm font-medium text-amber-800 mb-1.5">필요한 이전 페이지</label>
                 <select
                   value={(selectedEdge.data?.conditionValue as string) || ''}
                   onChange={(e) => {
@@ -748,7 +861,7 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
                       e.target.value
                     );
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2.5 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
                 >
                   <option value="">페이지 선택...</option>
                   {allPassages
@@ -759,7 +872,7 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
                       </option>
                     ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1.5 text-xs text-amber-600">
                   선택한 페이지에서 왔을 때만 이 링크가 표시됩니다
                 </p>
               </div>
@@ -773,18 +886,24 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
               onUpdateOrder={updateLinkOrder}
             />
 
-            <div className="pt-4 border-t">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm text-gray-600">
-                  <span className="font-medium">From:</span>{' '}
-                  {allPassages.find((p) => p.id === selectedEdge.source)?.name || 'Unknown'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm text-gray-600">
-                  <span className="font-medium">To:</span>{' '}
-                  {allPassages.find((p) => p.id === selectedEdge.target)?.name || 'Unknown'}
-                </span>
+            {/* Connection Info */}
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">연결 정보</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">출발:</span>{' '}
+                    {allPassages.find((p) => p.id === selectedEdge.source)?.name || 'Unknown'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                  <span className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-700">도착:</span>{' '}
+                    {allPassages.find((p) => p.id === selectedEdge.target)?.name || 'Unknown'}
+                  </span>
+                </div>
               </div>
               {(() => {
                 // Calculate current priority dynamically from story.links
@@ -808,30 +927,35 @@ const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
                 const priorityNumber = sourceLinks.findIndex(l => l.id === selectedEdge.id) + 1;
 
                 return (
-                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700">
-                      <span className="font-medium">Priority:</span> {priorityNumber}
-                      {priorityNumber === 1 && ' (Primary - shown as "Next" button)'}
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Multiple links from same source are numbered by priority
-                    </p>
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <span className={`
+                        inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                        ${priorityNumber === 1 ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-600'}
+                      `}>
+                        {priorityNumber}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {priorityNumber === 1 ? '기본 "다음" 버튼으로 표시됨' : `${priorityNumber}번째 우선순위`}
+                      </span>
+                    </div>
                   </div>
                 );
               })()}
             </div>
 
+            {/* Delete Button */}
             <Button
-              variant="ghost"
+              variant="danger"
               onClick={() => deleteEdge(selectedEdge.id)}
-              className="w-full text-red-600 hover:bg-red-50"
+              className="w-full"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Link
+              <Trash2 className="w-4 h-4" />
+              링크 삭제
             </Button>
 
-            <p className="text-xs text-gray-400 text-center">
-              Tip: Press Delete or Backspace to remove selected link
+            <p className="text-xs text-gray-400 text-center bg-gray-50 rounded-lg py-2 px-3">
+              Delete 또는 Backspace 키로 선택된 링크를 삭제할 수 있습니다
             </p>
           </div>
         </div>
@@ -920,6 +1044,8 @@ interface PassageEditFormProps {
   onClose: () => void;
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 const PassageEditForm: React.FC<PassageEditFormProps> = ({
   passage,
   allPassages,
@@ -932,12 +1058,15 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
   const [branchChoices, setBranchChoices] = useState<BranchChoice[]>([]);
   const [passageType, setPassageType] = useState(passage.passage_type);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [editorMode, setEditorMode] = useState<EditorMode>('wysiwyg');
   const [linkedPassages, setLinkedPassages] = useState<PassageRef[]>([]);
   const [isContentMaximized, setIsContentMaximized] = useState(false);
-  
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const isInitializedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialBranchChoicesRef = useRef<string>(''); // 초기값 저장용
 
   // 초기화
@@ -1067,35 +1196,56 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveStatus('saving');
+
+    // Clear any existing status timer
+    if (saveStatusTimerRef.current) {
+      clearTimeout(saveStatusTimerRef.current);
+    }
+
     try {
       const fullContent = getFullContent();
-      
+
       await api.put(`/admin/passages/${passage.id}`, {
         name,
         content: fullContent,
         passage_type: passageType,
       });
-      
+
       // 저장 후 초기값 업데이트
       initialBranchChoicesRef.current = JSON.stringify(branchChoices);
-      
+
+      setSaveStatus('saved');
       onUpdate();
+
+      // Reset status after 2 seconds
+      saveStatusTimerRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
     } catch (error) {
       console.error('Failed to update passage:', error);
+      setSaveStatus('error');
+
+      // Reset status after 3 seconds
+      saveStatusTimerRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this passage?')) return;
+    if (!confirm('이 패시지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
 
+    setIsDeleting(true);
     try {
       await api.delete(`/admin/passages/${passage.id}`);
       onUpdate();
       onClose();
     } catch (error) {
       console.error('Failed to delete passage:', error);
+      setIsDeleting(false);
     }
   };
 
@@ -1110,30 +1260,100 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
 
   const otherPassages = allPassages.filter((p) => p.id !== passage.id);
 
+  // Validation
+  const nameError = name.trim() === '' ? '패시지 이름을 입력해주세요' : undefined;
+  const hasErrors = !!nameError;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Passage Info Header */}
+      <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+        <div className={`
+          w-10 h-10 rounded-lg flex items-center justify-center
+          ${passageType === 'start' ? 'bg-emerald-100 text-emerald-600' :
+            passageType === 'branch' ? 'bg-amber-100 text-amber-600' :
+            passageType === 'end' ? 'bg-red-100 text-red-600' :
+            'bg-indigo-100 text-indigo-600'}
+        `}>
+          {passageType === 'start' ? (
+            <Play className="w-5 h-5" />
+          ) : passageType === 'branch' ? (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          ) : passageType === 'end' ? (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            </svg>
+          ) : (
+            <FileText className="w-5 h-5" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-gray-500">패시지 번호</p>
+          <p className="font-mono text-sm font-medium text-gray-900">
+            #{String(passage.passage_number).padStart(6, '0')}
+          </p>
+        </div>
+      </div>
+
+      {/* Name Input */}
       <div>
-        <label className="block text-sm font-medium mb-1">Name</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          이름 <span className="text-red-500">*</span>
+        </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="패시지 이름 입력..."
+          className={`
+            w-full px-3 py-2.5 border rounded-lg
+            transition-all duration-150
+            focus:ring-2 focus:ring-offset-0
+            ${nameError
+              ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-100 hover:border-gray-400'
+            }
+          `}
         />
+        {nameError && (
+          <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {nameError}
+          </p>
+        )}
       </div>
 
+      {/* Type Select */}
       <div>
-        <label className="block text-sm font-medium mb-1">Type</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">유형</label>
         <select
           value={passageType}
           onChange={(e) => setPassageType(e.target.value as Passage['passage_type'])}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          className="
+            w-full px-3 py-2.5 border border-gray-300 rounded-lg
+            bg-white text-gray-900
+            transition-all duration-150
+            focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:ring-offset-0
+            hover:border-gray-400
+            cursor-pointer
+          "
         >
-          <option value="start">Start</option>
-          <option value="content">Content</option>
-          <option value="branch">Branch</option>
-          <option value="end">End</option>
+          <option value="start">시작 (Start)</option>
+          <option value="content">콘텐츠 (Content)</option>
+          <option value="branch">분기 (Branch)</option>
+          <option value="end">종료 (End)</option>
         </select>
+        <p className="mt-1.5 text-xs text-gray-500">
+          {passageType === 'start' && '스토리의 시작점입니다. 하나의 스토리에 하나만 존재해야 합니다.'}
+          {passageType === 'content' && '일반적인 콘텐츠 페이지입니다.'}
+          {passageType === 'branch' && '사용자가 선택할 수 있는 분기점입니다.'}
+          {passageType === 'end' && '스토리의 끝점입니다. 여러 개가 존재할 수 있습니다.'}
+        </p>
       </div>
 
       <div>
@@ -1422,14 +1642,49 @@ const PassageEditForm: React.FC<PassageEditFormProps> = ({
         </div>
       )}
 
-      <div className="flex gap-2 pt-4 border-t">
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save'}
+      {/* Action Buttons with Save Status */}
+      <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || hasErrors}
+          loading={isSaving}
+          className={`
+            ${saveStatus === 'saved' ? '!bg-green-600 hover:!bg-green-700' : ''}
+            ${saveStatus === 'error' ? '!bg-red-600 hover:!bg-red-700' : ''}
+          `}
+        >
+          {saveStatus === 'saved' ? (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              저장 완료
+            </>
+          ) : saveStatus === 'error' ? (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              저장 실패
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              {isSaving ? '저장 중...' : '저장'}
+            </>
+          )}
         </Button>
-        <Button variant="ghost" onClick={handleDelete}>
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete
+
+        <div className="flex-1" />
+
+        <Button
+          variant="danger"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          loading={isDeleting}
+        >
+          <Trash2 className="w-4 h-4" />
+          {isDeleting ? '삭제 중...' : '삭제'}
         </Button>
       </div>
     </div>

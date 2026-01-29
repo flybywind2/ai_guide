@@ -33,7 +33,7 @@ export const TwinePassageRenderer: React.FC<TwinePassageRendererProps> = ({
     const sanitizedHtml = DOMPurify.sanitize(result.html, {
       ADD_ATTR: ['data-passage', 'data-passage-id', 'data-action', 'data-hook'],
       ADD_TAGS: ['span', 'a', 'img'],
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'span', 'div', 'img', 'blockquote', 'code', 'pre'],
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'span', 'div', 'img', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'caption', 'colgroup', 'col'],
       ALLOWED_ATTR: ['class', 'data-passage', 'data-passage-id', 'data-action', 'data-hook', 'href', 'src', 'alt', 'width', 'height', 'title', 'style']
     });
 

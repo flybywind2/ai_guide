@@ -212,3 +212,115 @@ body {
 .passage-link-broken:hover {
   background-color: #fee2e2; /* red-100 */
 }
+
+/* TipTap Editor Enhanced Styles */
+.ProseMirror mark {
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.ProseMirror a {
+  color: var(--primary-main);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.ProseMirror a:hover {
+  color: var(--primary-dark);
+}
+
+/* React Flow Enhanced Styles */
+.react-flow__node {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.react-flow__node:hover {
+  z-index: 100 !important;
+}
+
+.react-flow__node.selected {
+  z-index: 101 !important;
+}
+
+.react-flow__edge {
+  transition: stroke 0.2s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px;
+}
+
+.react-flow__controls {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-flow__controls-button {
+  transition: background-color 0.15s ease;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.react-flow__minimap {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Form Input Focus States */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Button Loading Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Tooltip Arrow */
+.tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+/* Save Status Transitions */
+.save-status-enter {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.save-status-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.save-status-exit {
+  opacity: 1;
+}
+
+.save-status-exit-active {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Drag & Drop Overlay */
+.drag-overlay {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 2px dashed var(--primary-main);
+  backdrop-filter: blur(4px);
+}

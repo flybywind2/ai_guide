@@ -50,7 +50,7 @@ const StoryMapModalContent: React.FC<StoryMapModalProps> = ({
   const fetchStoryMap = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/admin/stories/${storyId}`);
+      const response = await api.get(`/stories/structure/${storyId}`);
       const data: StoryWithPassages = response.data;
 
       console.log('Current Passage ID:', currentPassageId);
