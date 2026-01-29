@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -146,6 +146,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const [imageWidth, setImageWidth] = useState('50%');
   const [imageAlign, setImageAlign] = useState<'baseline' | 'middle' | 'top' | 'bottom'>('baseline');
 
+  // Track internal updates to prevent circular content sync
+  const isInternalUpdate = useRef(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -194,6 +197,8 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     ],
     content: '',
     onUpdate: ({ editor }) => {
+      // Mark this as an internal update
+      isInternalUpdate.current = true;
       // Format HTML with line breaks for better readability in code mode
       const html = editor.getHTML();
       const formattedHTML = html
@@ -209,12 +214,13 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     editorProps: {
       attributes: {
         class: 'passage-content focus:outline-none min-h-[300px] p-4',
-      },
-      handleDOMEvents: {
-        blur: () => {
-          // Prevent cursor jumping on blur
-          return false;
-        },
+        'autocomplete': 'off',
+        'autocorrect': 'off',
+        'autocapitalize': 'off',
+        'spellcheck': 'false',
+        'data-gramm': 'false',
+        'data-gramm_editor': 'false',
+        'data-enable-grammarly': 'false',
       },
       handlePaste: (view, event) => {
         // Check clipboard items for images
@@ -302,11 +308,13 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     },
   });
 
-  // 문제 1 수정: content 변경 시 에디터 내용 동기화
+  // Sync content from external changes, but avoid circular updates from typing
   useEffect(() => {
-    if (editor && content && editor.getHTML() !== content) {
+    if (editor && content && !isInternalUpdate.current && editor.getHTML() !== content) {
       editor.commands.setContent(content);
     }
+    // Reset the flag after processing
+    isInternalUpdate.current = false;
   }, [content, editor]);
 
   if (!editor) {
