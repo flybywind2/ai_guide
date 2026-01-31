@@ -28,4 +28,9 @@ api.interceptors.response.use(
   }
 );
 
+// User management APIs
+export const getUsers = () => api.get('/admin/users');
+export const updateUserRole = (userId: string, role: string) =>
+  api.put(`/admin/users/${userId}/role`, { role });
+
 export default api;

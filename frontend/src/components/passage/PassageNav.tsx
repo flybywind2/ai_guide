@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, RotateCcw, Home, Sparkles, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Home, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
 import { useStoryStore } from '../../stores/storyStore';
 import type { PassageWithContext } from '../../types';
 
@@ -63,22 +63,42 @@ export const PassageNav: React.FC<PassageNavProps> = ({ context }) => {
           {/* Center navigation area */}
           <div className="flex items-center gap-3">
             {(passage.passage_type === 'branch' || passage.passage_type === 'start') ? (
-              // For branch/start passages, only show end message if applicable
-              is_end && (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-medium">Journey Complete</span>
+              // For branch/start passages
+              <>
+                {is_end && (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-medium">Journey Complete</span>
+                    </div>
+                    <button
+                      onClick={handleChangePath}
+                      className="group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                    >
+                      <RotateCcw className="w-4 h-4 transition-transform group-hover:-rotate-180 duration-500" />
+                      Start Over
+                    </button>
                   </div>
-                  <button
-                    onClick={handleChangePath}
-                    className="group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-                  >
-                    <RotateCcw className="w-4 h-4 transition-transform group-hover:-rotate-180 duration-500" />
-                    Start Over
-                  </button>
-                </div>
-              )
+                )}
+                {!is_end && available_links.length === 0 && (
+                  // Show error when branch/start has no links
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="text-sm font-medium">Configuration Error</span>
+                    </div>
+                    <p className="text-sm text-gray-600 max-w-md text-center">
+                      This passage has no available choices. Please contact the administrator.
+                    </p>
+                    <button
+                      onClick={handleChangePath}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Return Home
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               // For non-branch/start passages, show normal navigation options
               <>

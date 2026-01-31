@@ -64,8 +64,8 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
     .filter(l => l.condition_type !== 'user_selection')
     .sort((a, b) => a.link_order - b.link_order);
 
-  // Check if user can edit (super_admin or editor role)
-  const canEdit = isAuthenticated && user && (user.role === 'super_admin' || user.role === 'editor');
+  // Check if user can edit (super_admin, editor, or viewer role)
+  const canEdit = isAuthenticated && user && (user.role === 'super_admin' || user.role === 'editor' || user.role === 'viewer');
 
   // Update content when passage changes
   useEffect(() => {

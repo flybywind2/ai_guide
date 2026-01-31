@@ -58,3 +58,13 @@ async def get_super_admin(
             detail="Super admin access required"
         )
     return user
+
+async def get_content_editor(
+    user: User = Depends(get_current_user_required)
+) -> User:
+    if user.role not in ["super_admin", "editor", "viewer"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Content editing access required"
+        )
+    return user

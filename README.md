@@ -58,6 +58,39 @@ npm run dev
 - **Feedback System**: 익명 피드백 및 댓글 기능
 - **Bookmarks**: 페이지 북마크 저장
 - **Continue Feature**: 마지막 읽은 위치 저장
+- **Role-based Access Control**: 4단계 사용자 권한 관리
+
+## User Roles & Permissions
+
+| Feature | Super Admin | Editor | Viewer | User |
+|---------|-------------|--------|--------|------|
+| **Content Management** | | | | |
+| View Stories | ✅ | ✅ | ✅ | ✅ |
+| Create/Edit Stories | ✅ | ✅ | ❌ | ❌ |
+| Delete Stories | ✅ | ✅ | ❌ | ❌ |
+| Create/Edit Passages | ✅ | ✅ | ❌ | ❌ |
+| Inline Edit Passage Content | ✅ | ✅ | ✅ | ❌ |
+| Create/Edit Links | ✅ | ✅ | ❌ | ❌ |
+| Visual Story Editor | ✅ | ✅ | ❌ | ❌ |
+| Activate/Deactivate Stories | ✅ | ✅ | ❌ | ❌ |
+| **User Features** | | | | |
+| Submit Feedback | ✅ | ✅ | ✅ | ✅ |
+| Add/Remove Bookmarks | ✅ | ✅ | ✅ | ✅ |
+| Continue Reading | ✅ | ✅ | ✅ | ✅ |
+| **Admin Features** | | | | |
+| View Feedback Dashboard | ✅ | ✅ | ❌ | ❌ |
+| Manage Feedback | ✅ | ✅ | ❌ | ❌ |
+| View Analytics | ✅ | ✅ | ❌ | ❌ |
+| **User Management** | | | | |
+| View User List | ✅ | ❌ | ❌ | ❌ |
+| Change User Roles | ✅ | ❌ | ❌ | ❌ |
+
+### Role Descriptions
+
+- **Super Admin**: Full system access including user management
+- **Editor**: Can create and manage content (Stories, Passages, Links)
+- **Viewer**: Can view all content and submit feedback
+- **User**: Standard user with reading and feedback capabilities
 
 ## Tech Stack
 

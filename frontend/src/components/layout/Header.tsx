@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Users } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../common';
 
@@ -32,6 +32,14 @@ export const Header: React.FC = () => {
                 <Button variant="ghost" size="sm">
                   <Settings className="w-4 h-4 mr-2" />
                   Admin
+                </Button>
+              </Link>
+            )}
+            {user?.role === 'super_admin' && (
+              <Link to="/admin/users">
+                <Button variant="ghost" size="sm">
+                  <Users className="w-4 h-4 mr-2" />
+                  Users
                 </Button>
               </Link>
             )}

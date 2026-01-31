@@ -25,7 +25,7 @@ from app.schemas.story import (
 )
 from app.schemas.user import UserResponse, UserUpdate
 from app.schemas.feedback import FeedbackWithPassageInfo, FeedbackResponse
-from app.core.dependencies import get_admin_user, get_super_admin
+from app.core.dependencies import get_admin_user, get_super_admin, get_content_editor
 from app.config import get_settings
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -327,7 +327,7 @@ async def update_passage(
     passage_id: str,
     passage_data: PassageUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    user: User = Depends(get_content_editor)
 ):
     result = await db.execute(select(Passage).where(Passage.id == passage_id))
     passage = result.scalar_one_or_none()

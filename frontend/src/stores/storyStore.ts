@@ -270,13 +270,16 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       });
       const passage = response.data.passage;
       set((state) => {
-        // Don't truncate - keep all history and append new navigation
+        // Truncate history after current index (like browser back/forward)
+        const truncatedHistory = state.navigationHistory.slice(0, state.currentHistoryIndex + 1);
+        const truncatedHistoryWithNames = state.navigationHistoryWithNames.slice(0, state.currentHistoryIndex + 1);
+
         return {
           currentPassage: response.data,
           previousPassageId: currentPassageId,
-          navigationHistory: [...state.navigationHistory, passage.id],
-          navigationHistoryWithNames: [...state.navigationHistoryWithNames, { id: passage.id, name: passage.name }],
-          currentHistoryIndex: state.navigationHistoryWithNames.length,
+          navigationHistory: [...truncatedHistory, passage.id],
+          navigationHistoryWithNames: [...truncatedHistoryWithNames, { id: passage.id, name: passage.name }],
+          currentHistoryIndex: truncatedHistory.length, // New index after truncate + append
         };
       });
       get().saveLastVisit();

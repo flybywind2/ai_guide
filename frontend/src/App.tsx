@@ -9,6 +9,7 @@ import { StorySelectPage } from './pages/story/StorySelectPage';
 import { PassagePage } from './pages/story/PassagePage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { StoryEditorPage } from './pages/admin/StoryEditorPage';
+import { UserManagementPage } from './pages/admin/UserManagementPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{
@@ -77,6 +78,14 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute adminOnly>
             <StoryEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute adminOnly>
+            <UserManagementPage />
           </ProtectedRoute>
         }
       />
