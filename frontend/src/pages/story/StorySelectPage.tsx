@@ -46,7 +46,7 @@ const getIcon = (iconName?: string) => {
 
 export const StorySelectPage: React.FC = () => {
   const navigate = useNavigate();
-  const { stories, fetchStories, startStory, getLastVisit, isLoading } = useStoryStore();
+  const { stories, fetchStories, startStory, loadPassageById, getLastVisit, isLoading } = useStoryStore();
   const { showContinueModal, setShowContinueModal } = useUIStore();
 
   useEffect(() => {
@@ -67,7 +67,8 @@ export const StorySelectPage: React.FC = () => {
   const handleContinue = async () => {
     const lastVisit = getLastVisit();
     if (lastVisit) {
-      await startStory(lastVisit.storyId);
+      // Load the saved passage, not the start passage
+      await loadPassageById(lastVisit.passageId, false);
       navigate('/passage');
     }
     setShowContinueModal(false);

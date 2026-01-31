@@ -31,6 +31,11 @@ export const PassagePage: React.FC = () => {
     const storyIdParam = searchParams.get('story');
 
     if (passageNumberParam && storyIdParam) {
+      // Don't reload if we already have the correct passage loaded
+      if (currentPassage?.passage.passage_number === parseInt(passageNumberParam, 10) &&
+          currentStory?.id === storyIdParam) {
+        return;
+      }
       // Load passage by number
       loadPassageByNumber(parseInt(passageNumberParam, 10), storyIdParam);
       return;
@@ -38,6 +43,10 @@ export const PassagePage: React.FC = () => {
 
     // If passageId is in URL path, load that passage
     if (passageId) {
+      // Don't reload if we already have the correct passage loaded
+      if (currentPassage?.passage.id === passageId) {
+        return;
+      }
       loadPassageById(passageId, false);
       return;
     }

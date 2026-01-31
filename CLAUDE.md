@@ -6,6 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI 활용 가이드 - A Twine-style interactive guide system for Samsung DS employees to learn AI utilization and development paths. Built with React frontend and FastAPI backend using SQLite3 database.
 
+## Work Environment
+
+**IMPORTANT CONTEXT:**
+- **Development Environment**: Code changes and feature development happen in personal environment (this repo)
+- **Content Production Environment**: Actual guide content creation happens on company computer (Samsung DS)
+- **Data Security**: Company has data exfiltration prevention - no external data transfer allowed
+- **Workflow**:
+  1. Code/feature development done here
+  2. Changes transferred to company computer
+  3. Guide content (Passage text, Stories) authored on company system
+  4. Database (`data/app.db`) populated on company system with actual Samsung DS AI guide content
+
+**Implication**: When working on this codebase, focus on:
+- Application features and functionality
+- Admin editor improvements
+- Navigation engine enhancements
+- DO NOT expect actual guide content in local DB - it's placeholder/test data only
+
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Zustand, React Router, React Flow (visual editor), TipTap (WYSIWYG), Tailwind CSS

@@ -153,7 +153,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   loadPassageById: async (passageId: string, updateHistory = true) => {
     set({ isLoading: true });
     try {
-      // First get the passage to find its story
+      // Get the passage without previous context (used for direct URL access)
       const response = await api.get(`/passages/${passageId}`);
       const passage = response.data.passage;
       const storyId = passage.story_id;
