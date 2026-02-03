@@ -51,7 +51,7 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
   const { passage, available_links } = context;
   const { bookmarks, addBookmark, removeBookmark, navigateToPassage, navigateViaLink, currentStory, refreshCurrentPassage, storyStructure } =
     useStoryStore();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [passageContent, setPassageContent] = useState(passage.content);
 
@@ -64,8 +64,8 @@ export const PassageView: React.FC<PassageViewProps> = ({ context }) => {
     .filter(l => l.condition_type !== 'user_selection')
     .sort((a, b) => a.link_order - b.link_order);
 
-  // Check if user can edit (super_admin, editor, or viewer role)
-  const canEdit = isAuthenticated && user && (user.role === 'super_admin' || user.role === 'editor' || user.role === 'viewer');
+  // Check if user can edit (anyone can edit now, no auth required)
+  const canEdit = true;
 
   // Update content when passage changes
   useEffect(() => {
