@@ -173,7 +173,8 @@ export const InlinePassageEditor: React.FC<InlinePassageEditorProps> = ({
     setIsSaving(true);
     try {
       const content = editor.getHTML();
-      await api.put(`/admin/passages/${passageId}`, { content });
+      // Changed from /admin/passages to /passages (no auth required)
+      await api.put(`/passages/${passageId}`, { content });
       onSave(content);
     } catch (error) {
       console.error('Failed to save passage:', error);
