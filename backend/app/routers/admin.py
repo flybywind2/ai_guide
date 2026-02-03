@@ -34,8 +34,7 @@ settings = get_settings()
 # ===== Story CRUD =====
 @router.get("/stories", response_model=List[StoryResponse])
 async def get_all_stories(
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Story).order_by(Story.sort_order.asc(), Story.created_at.desc()))
     stories = result.scalars().all()
@@ -61,8 +60,7 @@ async def get_all_stories(
 @router.post("/stories", response_model=StoryResponse)
 async def create_story(
     story_data: StoryCreate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     # Get the max sort_order and add 1 for new story
     result = await db.execute(select(func.max(Story.sort_order)))
@@ -75,7 +73,7 @@ async def create_story(
         zoom=story_data.zoom,
         tags=json.dumps(story_data.tags),
         sort_order=max_order + 1,
-        created_by=user.id
+        created_by=None  # No auth required
     )
     db.add(story)
     await db.commit()
@@ -99,8 +97,7 @@ async def create_story(
 @router.put("/stories/reorder", response_model=List[StoryResponse])
 async def reorder_stories(
     reorder_data: StoryReorderRequest,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     """Reorder stories by providing a list of story IDs in the desired order"""
     # Update sort_order for each story
@@ -138,8 +135,7 @@ async def reorder_stories(
 @router.get("/stories/{story_id}", response_model=StoryWithPassages)
 async def get_story_full(
     story_id: str,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Story).where(Story.id == story_id))
     story = result.scalar_one_or_none()
@@ -204,8 +200,7 @@ async def get_story_full(
 async def update_story(
     story_id: str,
     story_data: StoryUpdate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Story).where(Story.id == story_id))
     story = result.scalar_one_or_none()
@@ -251,8 +246,7 @@ async def update_story(
 @router.delete("/stories/{story_id}")
 async def delete_story(
     story_id: str,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Story).where(Story.id == story_id))
     story = result.scalar_one_or_none()
@@ -267,8 +261,7 @@ async def delete_story(
 @router.post("/passages", response_model=PassageResponse)
 async def create_passage(
     passage_data: PassageCreate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     # Retry logic to handle race condition in passage_number assignment
     max_retries = 3
@@ -326,8 +319,7 @@ async def create_passage(
 async def update_passage(
     passage_id: str,
     passage_data: PassageUpdate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_content_editor)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Passage).where(Passage.id == passage_id))
     passage = result.scalar_one_or_none()
@@ -374,8 +366,7 @@ async def update_passage(
 @router.delete("/passages/{passage_id}")
 async def delete_passage(
     passage_id: str,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Passage).where(Passage.id == passage_id))
     passage = result.scalar_one_or_none()
@@ -390,8 +381,7 @@ async def delete_passage(
 @router.post("/links", response_model=LinkResponse)
 async def create_link(
     link_data: LinkCreate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     link = Link(
         story_id=link_data.story_id,
@@ -421,8 +411,7 @@ async def create_link(
 async def update_link(
     link_id: str,
     link_data: LinkUpdate,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Link).where(Link.id == link_id))
     link = result.scalar_one_or_none()
@@ -455,8 +444,7 @@ async def update_link(
 @router.delete("/links/{link_id}")
 async def delete_link(
     link_id: str,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Link).where(Link.id == link_id))
     link = result.scalar_one_or_none()
@@ -471,8 +459,7 @@ async def delete_link(
 @router.post("/upload/image")
 async def upload_image(
     file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_admin_user)
+    db: AsyncSession = Depends(get_db)
 ):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
@@ -489,7 +476,7 @@ async def upload_image(
         original_name=file.filename,
         mime_type=file.content_type,
         size_bytes=len(content),
-        uploaded_by=user.id
+        uploaded_by=None  # No auth required
     )
     db.add(image)
     await db.commit()
